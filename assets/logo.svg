@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- Background glow -->
+  <circle cx="100" cy="100" r="90" fill="url(#glow)" filter="url(#blur)" opacity="0.7"/>
+
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="86" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.4"/>
+  <circle cx="100" cy="100" r="78" fill="#05070d"/>
+  <circle cx="100" cy="100" r="78" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+
+  <!-- Ears -->
+  <circle cx="62" cy="62" r="20" fill="#06b6d4"/>
+  <circle cx="138" cy="62" r="20" fill="#06b6d4"/>
+  <circle cx="62" cy="62" r="11" fill="#05070d"/>
+  <circle cx="138" cy="62" r="11" fill="#05070d"/>
+
+  <!-- Head -->
+  <ellipse cx="100" cy="110" rx="62" ry="62" fill="url(#grad2)"/>
+
+  <!-- Eyes -->
+  <circle cx="80" cy="102" r="10" fill="#05070d"/>
+  <circle cx="120" cy="102" r="10" fill="#05070d"/>
+  <circle cx="83" cy="99" r="3.5" fill="#ffffff"/>
+  <circle cx="123" cy="99" r="3.5" fill="#ffffff"/>
+
+  <!-- Muzzle -->
+  <ellipse cx="100" cy="132" rx="24" ry="18" fill="#ffffff" opacity="0.95"/>
+  <ellipse cx="100" cy="124" rx="7" ry="5" fill="#05070d"/>
+
+  <!-- Whisks -->
+  <line x1="76" y1="128" x2="60" y2="124" stroke="#05070d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="76" y1="132" x2="58" y2="132" stroke="#05070d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="76" y1="136" x2="60" y2="140" stroke="#05070d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="124" y1="128" x2="140" y2="124" stroke="#05070d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="124" y1="132" x2="142" y2="132" stroke="#05070d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="124" y1="136" x2="140" y2="140" stroke="#05070d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Small accent dots -->
+  <circle cx="100" cy="30" r="2.5" fill="#06b6d4"/>
+  <circle cx="170" cy="100" r="2.5" fill="#8b5cf6"/>
+  <circle cx="30" cy="100" r="2.5" fill="#ec4899"/>
+  <circle cx="100" cy="170" r="2.5" fill="#06b6d4"/>
+</svg>
