@@ -1,6 +1,9 @@
 # 📚 مستندات Hamed Panel
 
 به مرکز مستندات **Hamed Panel v1.0.5** خوش آمدید.
+  <p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=shark&color=gradient&height=80&section=footer" />
+</p>
 
 ---
 
