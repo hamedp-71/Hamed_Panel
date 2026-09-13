@@ -1,0 +1,72 @@
+# Cloudflare Wrangler
+.wrangler/
+.dev.vars
+wrangler.toml.bak
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# Logs
+*.log
+logs/
+wrangler.log
+
+# Editor & IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+dist/
+build/
+out/
+.cache/
+.temp/
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Misc
+*.local
+*.tmp
+*.pid
