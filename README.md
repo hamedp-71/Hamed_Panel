@@ -10,16 +10,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/THE-SAZ/saz-hamed-panel/stargazers">
+  <a href="https://github.com/hamedp-71/Hamed_Panel/stargazers">
     <img src="https://img.shields.io/github/stars/THE-SAZ/saz-hamed-panel?style=for-the-badge&logo=github&color=8b5cf6&labelColor=0a0e1a" alt="Stars">
   </a>
-  <a href="https://github.com/THE-SAZ/saz-hamed-panel/network/members">
+  <a href="https://github.com/hamedp-71/Hamed_Panel/network/members">
     <img src="https://img.shields.io/github/forks/THE-SAZ/saz-hamed-panel?style=for-the-badge&logo=github&color=06b6d4&labelColor=0a0e1a" alt="Forks">
   </a>
-  <a href="https://github.com/THE-SAZ/saz-hamed-panel/issues">
+  <a href="https://github.com/hamedp-71/Hamed_Panel/issues">
     <img src="https://img.shields.io/github/issues/THE-SAZ/saz-hamed-panel?style=for-the-badge&logo=github&color=ec4899&labelColor=0a0e1a" alt="Issues">
   </a>
-  <a href="https://github.com/THE-SAZ/saz-hamed-panel/blob/main/LICENSE">
+  <a href="https://github.com/hamedp-71/Hamed_Panel/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge&logo=opensourceinitiative&labelColor=0a0e1a" alt="License">
   </a>
 </p>
