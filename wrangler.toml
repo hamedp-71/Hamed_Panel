@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════
+#   Hamed Panel v1.0.5 · Cloudflare Workers Configuration
+#   Developed by THE SAZ
+# ═══════════════════════════════════════════════════════════════
+
+name = "saz-hamed-panel"
+main = "_worker.js"
+compatibility_date = "2024-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ─── D1 Database ───────────────────────────────────────────────
+# بعد از اجرای `wrangler d1 create hamed-panel-db` مقدار database_id را اینجا قرار دهید
+[[d1_databases]]
+binding = "IOT_DB"
+database_name = "hamed-panel-db"
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+
+# ─── KV Namespace (اختیاری) ───────────────────────────────────
+# برای Session سریع‌تر و کاهش بار روی D1
+# بعد از اجرای `wrangler kv:namespace create SESSIONS_KV` مقدار id را قرار دهید
+# [[kv_namespaces]]
+# binding = "SESSIONS_KV"
+# id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+
+# ─── R2 Bucket (اختیاری) ──────────────────────────────────────
+# برای پشتیبان‌گیری خودکار
+# [[r2_buckets]]
+# binding = "BACKUP_BUCKET"
+# bucket_name = "hamed-panel-backups"
+
+# ─── Environment Variables ────────────────────────────────────
+# از طریق داشبورد Cloudflare یا `wrangler secret put` تنظیم کنید
+# [vars]
+# RELAY_IP = ""
+
+# ─── Cron Triggers ────────────────────────────────────────────
+# برای اجرای خودکار تسک‌ها (اختیاری)
+[triggers]
+crons = ["*/15 * * * *"]  # هر ۱۵ دقیقه
+
+# ─── Observability ────────────────────────────────────────────
+[observability]
+enabled = true
+
+[observability.logs]
+invocation_logs = true
+
+# ─── Deployment ───────────────────────────────────────────────
+[env.production]
+name = "saz-hamed-panel"
