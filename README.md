@@ -11,13 +11,13 @@
 
 <p align="center">
   <a href="https://github.com/hamedp-71/Hamed_Panel/stargazers">
-    <img src="https://img.shields.io/github/stars/THE-SAZ/saz-hamed-panel?style=for-the-badge&logo=github&color=8b5cf6&labelColor=0a0e1a" alt="Stars">
+    <img src="https://img.shields.io/github/stars/hamedp-71/Hamed_Panel?style=for-the-badge&logo=github&color=8b5cf6&labelColor=0a0e1a" alt="Stars">
   </a>
   <a href="https://github.com/hamedp-71/Hamed_Panel/network/members">
-    <img src="https://img.shields.io/github/forks/THE-SAZ/saz-hamed-panel?style=for-the-badge&logo=github&color=06b6d4&labelColor=0a0e1a" alt="Forks">
+    <img src="https://img.shields.io/github/forks/hamedp-71/Hamed_Panel?style=for-the-badge&logo=github&color=06b6d4&labelColor=0a0e1a" alt="Forks">
   </a>
   <a href="https://github.com/hamedp-71/Hamed_Panel/issues">
-    <img src="https://img.shields.io/github/issues/THE-SAZ/saz-hamed-panel?style=for-the-badge&logo=github&color=ec4899&labelColor=0a0e1a" alt="Issues">
+    <img src="https://img.shields.io/github/issues/hamedp-71/Hamed_Panel?style=for-the-badge&logo=github&color=ec4899&labelColor=0a0e1a" alt="Issues">
   </a>
   <a href="https://github.com/hamedp-71/Hamed_Panel/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge&logo=opensourceinitiative&labelColor=0a0e1a" alt="License">
@@ -154,8 +154,8 @@
 
 ```bash
 # 1. کلون ریپازیتوری
-git clone https://github.com/THE-SAZ/saz-hamed-panel.git
-cd saz-hamed-panel
+git clone https://github.com/hamedp-71/Hamed_Panel.git
+cd Hamed_Panel
 
 # 2. نصب Wrangler
 npm install -g wrangler
@@ -174,7 +174,7 @@ wrangler deploy
 
 پس از استقرار، آدرس Worker خود را باز کنید:
 ```
-https://saz-hamed-panel.<your-subdomain>.workers.dev/panel
+https://<your-worker>.<subdomain>.workers.dev/panel
 ```
 
 **اطلاعات ورود پیش‌فرض:**
@@ -379,8 +379,8 @@ The **Silent Edition** focuses on stability, stealth, and a strict **Zero Log** 
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/THE-SAZ/saz-hamed-panel.git
-cd saz-hamed-panel
+git clone https://github.com/hamedp-71/Hamed_Panel.git
+cd Hamed_Panel
 
 # 2. Install Wrangler
 npm install -g wrangler
@@ -399,7 +399,7 @@ wrangler deploy
 
 Once deployed, open your Worker URL:
 ```
-https://saz-hamed-panel.<your-subdomain>.workers.dev/panel
+https://<your-worker>.<subdomain>.workers.dev/panel
 ```
 
 **Default credentials:**
@@ -497,3 +497,5 @@ This project is released under the **MIT License** — free to use, modify, and 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer&text=THE%20SAZ%20%7C%20Hamed%20Panel%20v1.0.5&fontSize=24&fontColor=ffffff&animation=twinkling" width="100%">
 </p>
+
+---
