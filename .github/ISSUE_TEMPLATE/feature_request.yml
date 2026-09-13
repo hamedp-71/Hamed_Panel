@@ -1,0 +1,54 @@
+name: 💡 Feature Request
+description: پیشنهاد یک ویژگی جدید
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        از اینکه برای بهبود Hamed Panel ایده دارید سپاسگزاریم! 💜
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: مشکل / نیاز
+      description: این ویژگی چه مشکلی را حل می‌کند؟
+      placeholder: "من همیشه وقتی ... را می‌خواهم، مجبورم ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: راه‌حل پیشنهادی
+      description: چه ویژگی‌ای را پیشنهاد می‌دهید؟
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: راه‌حل‌های جایگزین
+      description: آیا راه دیگری به ذهنتان می‌رسد؟
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: اولویت
+      options:
+        - کم
+        - متوسط
+        - زیاد
+        - حیاتی
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: تأیید
+      options:
+        - label: بررسی کردم که این ویژگی قبلاً پیشنهاد نشده باشد.
+          required: true
