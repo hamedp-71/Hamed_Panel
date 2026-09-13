@@ -1,0 +1,83 @@
+name: 🐛 Bug Report
+description: گزارش یک باگ یا مشکل در Hamed Panel
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        از اینکه وقت خود را برای گزارش این مشکل اختصاص می‌دهید، سپاسگزاریم! 🙏
+        لطفاً فرم زیر را با دقت پر کنید تا بتوانیم سریع‌تر مشکل را رفع کنیم.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: شرح مشکل
+      description: توضیح واضح و مختصر از باگ.
+      placeholder: "مثلاً: هنگام ساخت کاربر جدید، پنل کرش می‌کند..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: مراحل بازتولید
+      description: برای بازتولید باگ چه کارهایی انجام دادید؟
+      placeholder: |
+        1. به پنل بروید
+        2. روی + جدید کلیک کنید
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: رفتار مورد انتظار
+      description: چه انتظاری داشتید؟
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: نسخه پنل
+      placeholder: "1.0.5"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: مرورگر / کلاینت
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Brave
+        - v2rayNG
+        - Clash Meta
+        - Sing-Box
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: لاگ‌ها / اسکرین‌شات
+      description: اگر لاگ یا اسکرین‌شات دارید، اینجا قرار دهید.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: تأیید
+      options:
+        - label: بررسی کردم که این باگ تکراری نیست.
+          required: true
+        - label: از آخرین نسخه استفاده می‌کنم.
+          required: true
