@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.5-8b5cf6?style=for-the-badge&logo=semanticrelease&labelColor=0a0e1a" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.0.6-8b5cf6?style=for-the-badge&logo=semanticrelease&labelColor=0a0e1a" alt="Version">
   <img src="https://img.shields.io/badge/Cloudflare-Workers-f38020?style=for-the-badge&logo=cloudflare&labelColor=0a0e1a" alt="Cloudflare Workers">
   <img src="https://img.shields.io/badge/Runtime-V8_Isolate-06b6d4?style=for-the-badge&logo=javascript&labelColor=0a0e1a" alt="Runtime">
   <img src="https://img.shields.io/badge/Status-Stable-10b981?style=for-the-badge&logo=statuspage&labelColor=0a0e1a" alt="Status">
