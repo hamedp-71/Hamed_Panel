@@ -75,7 +75,7 @@
   <!-- Version chip -->
   <g transform="translate(285, 205)">
     <rect x="0" y="0" width="180" height="30" rx="15" fill="#8b5cf6" opacity="0.15" stroke="#8b5cf6" stroke-width="1"/>
-    <text x="90" y="20" font-family="JetBrains Mono, monospace" font-size="13" font-weight="800" fill="#c4b5fd" text-anchor="middle" letter-spacing="1">v1.0.5 · SILENT</text>
+    <text x="90" y="20" font-family="JetBrains Mono, monospace" font-size="13" font-weight="800" fill="#c4b5fd" text-anchor="middle" letter-spacing="1">v1.0.6 · DESIGN</text>
   </g>
 
   <!-- Developer chip -->
