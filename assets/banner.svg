@@ -67,7 +67,7 @@
   </g>
 
   <!-- Main title -->
-  <text x="280" y="140" font-family="JetBrains Mono, Consolas, monospace" font-size="58" font-weight="900" fill="url(#gradText)" filter="url(#glow)" letter-spacing="2">HAMED PANEL</text>
+  <text x="280" y="140" font-family="JetBrains Mono, Consolas, monospace" font-size="58" font-weight="900" fill="url(#gradText)" filter="url(#glow)" letter-spacing="2">HAMED PANEL | پـنـل حـامـد</text>
 
   <!-- Subtitle -->
   <text x="282" y="180" font-family="JetBrains Mono, Consolas, monospace" font-size="18" font-weight="600" fill="#7c88a6" letter-spacing="6">V2RAY · XRAY · TELEMETRY GATEWAY</text>
