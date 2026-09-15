@@ -495,7 +495,7 @@ https://<your-worker>.<subdomain>.workers.dev/panel
 This project is released under the **MIT License** — free to use, modify, and distribute with attribution.
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer&text=THE%20SAZ%20%7C%20Hamed%20Panel%20v1.0.6&fontSize=24&fontColor=ffffff&animation=twinkling" width="100%">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer&text=THE%20SAZ%20%7C%20Hamed%20Panel%20حـــــامـــــد&fontSize=24&fontColor=ffffff&animation=twinkling" width="100%">
 </p>
 
 ---
