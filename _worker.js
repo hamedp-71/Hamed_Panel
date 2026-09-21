@@ -1,8 +1,8 @@
 import { connect } from "cloudflare:sockets";
 
-/* HAMED PANEL v1.0.6 — Design Edition (Final) */
+/* HAMED PANEL v1.0.7 — Improvements Edition */
 
-const CURRENT_VERSION = "1.0.6";
+const CURRENT_VERSION = "1.0.7";
 const PANEL_BRAND = "Hamed Panel";
 const SESSION_TTL_MS = 24 * 3600 * 1000;
 const AUTH_MAX_ATTEMPTS = 5;
@@ -18,16 +18,23 @@ const CARRIERS = {
   irancell: { name:"ایرانسل", nat64:"2a10:cc40::/96", fragment:"1-3-1-2" },
   rightel: { name:"رایتل", nat64:"2a03:7b00::/96", fragment:"1-1-1-1" },
   mokhaberat: { name:"مخابرات", nat64:"2a03:5a00::/96", fragment:"1-2-1-1" },
+  shatel: { name:"شاتل", nat64:"2a03:5a00::/96", fragment:"1-2-1-1" },
 };
 
-const IRAN_DOMAINS_PRESET = ["ir","gov.ir","ac.ir","edu.ir","bank","shaparak.ir","aparat.com","digikala.com","divar.ir","snapp.ir","tapsi.ir","bmi.ir","mci.ir","irancell.ir","rightel.ir","varzesh3.com","farsnews.ir","tasnimnews.com","zoomit.ir"];
+const IRAN_DOMAINS_PRESET = ["ir","gov.ir","ac.ir","edu.ir","bank","shaparak.ir","aparat.com","digikala.com","divar.ir","snapp.ir","tapsi.ir","bmi.ir","mci.ir","irancell.ir","rightel.ir","varzesh3.com","farsnews.ir","tasnimnews.com","zoomit.ir","khabaronline.ir","mehrnews.com","irna.ir","iscanews.ir","eghtesadnews.com","alibaba.ir","flightio.com","digistyle.com","modiseh.com","bamilo.com","snappfood.ir","snapptrip.com","cafebazaar.ir","myket.ir","sibapp.com","farsroid.com","zoomit.ir","nikkan.ir"];
 
 /* ═══════════════════════════════════════════════════════════
-   RELAY IP PRESETS — Rich, quality-verified CF IP pools by region
-   Used for both "Clean IP" (client-side) and "Relay IP" (server-side)
+   CF PORTS — All valid Cloudflare proxy ports
+   ═══════════════════════════════════════════════════════════ */
+const CF_HTTPS_PORTS = ["443","8443","2053","2083","2087","2096"];
+const CF_HTTP_PORTS = ["80","8080","8880","2052","2082","2086","2095"];
+const CF_ALL_PORTS = [...CF_HTTP_PORTS, ...CF_HTTPS_PORTS];
+
+/* ═══════════════════════════════════════════════════════════
+   RELAY IP PRESETS — Rich, quality-verified CF IP pools
    ═══════════════════════════════════════════════════════════ */
 const RELAY_IP_PRESETS = [
-  { id:"auto", name:"اتوماتیک (دومین)", flag:"⚡", ips:["ProxyIP.CMLiussss.net","ProxyIP.US.KG","ProxyIP.CM.RF.TW","ProxyIP.Dynu.net"] },
+  { id:"auto", name:"اتوماتیک", flag:"⚡", ips:["ProxyIP.CMLiussss.net","ProxyIP.US.KG","ProxyIP.CM.RF.TW","ProxyIP.Dynu.net","ts.hpc.tw"] },
   { id:"de", name:"آلمان", flag:"🇩🇪", ips:["188.114.96.1","188.114.97.1","188.114.98.1","188.114.99.1","188.114.100.1","188.114.101.1","188.114.102.1","188.114.103.1","188.114.104.1","188.114.105.1","188.114.106.1","188.114.107.1","188.114.108.1","188.114.109.1","188.114.110.1","188.114.111.1","188.114.96.2","188.114.97.2","188.114.98.2","188.114.99.2"] },
   { id:"us", name:"آمریکا", flag:"🇺🇸", ips:["104.16.0.1","104.16.1.1","104.16.2.1","104.17.0.1","104.17.1.1","104.18.0.1","104.18.1.1","104.19.0.1","104.19.1.1","104.20.0.1","104.20.1.1","104.21.0.1","104.21.1.1","104.22.0.1","104.22.1.1","104.23.0.1","104.24.0.1","104.25.0.1","104.26.0.1","104.27.0.1","172.64.0.1","172.65.0.1","172.66.0.1","172.67.0.1"] },
   { id:"ae", name:"امارات", flag:"🇦🇪", ips:["197.234.240.1","197.234.240.2","197.234.240.3","197.234.241.1","197.234.241.2","197.234.242.1","197.234.242.2","197.234.242.3","197.234.243.1","197.234.243.2","197.234.243.3"] },
@@ -58,7 +65,7 @@ const getAlpha = () => String.fromCharCode(118,108,101,115,115);
 const getBeta = () => String.fromCharCode(116,114,111,106,97,110);
 const getGamma = () => String.fromCharCode(99,108,97,115,104);
 
-/* ═══════ Canonical Otter SVG — single source of truth ═══════ */
+/* ═══════ Canonical Otter SVG ═══════ */
 const OTTER_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
   + '<defs>'
   + '<linearGradient id="otterBodyGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ec4899"/></linearGradient>'
@@ -72,16 +79,45 @@ const OTTER_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
   + '<ellipse cx="50" cy="66" rx="13" ry="10" fill="#fff" opacity=".9"/><ellipse cx="50" cy="62" rx="3.5" ry="2.5" fill="#0a0e1a"/>'
   + '</svg>';
 
-/* ═══════ Port presets ═══════ */
-const PORT_PRESETS = {
-  standard: ["443","8443","2053","2083","2087","2096"],
-  secure: ["443","8443","2053","2083"],
-  all: ["80","8080","8880","2052","2082","2086","2095","443","8443","2053","2083","2087","2096"],
-};
-
 const safeBtoa = (str) => {
   try { const bytes = new TextEncoder().encode(str); let binary = ""; for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); } catch (e) { return btoa(str); }
 };
+
+/* ═══════ Port parsing — newlines, commas, semicolons, spaces ═══════ */
+function parsePorts(raw, fallback) {
+  const list = String(raw || "").split(/[\r\n,;\s]+/).map(s => s.trim()).filter(Boolean);
+  const valid = list.filter(p => /^\d{1,5}$/.test(p) && parseInt(p) > 0 && parseInt(p) <= 65535);
+  return valid.length > 0 ? [...new Set(valid)] : (fallback || ["443"]);
+}
+
+/* ═══════ IP list parsing ═══════ */
+function parseIpList(raw) {
+  if (!raw) return [];
+  return String(raw).split(/[\r\n,;]+/).map(s => {
+    const t = s.trim();
+    if (!t) return "";
+    return t.split("#")[0].trim();
+  }).filter(Boolean);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FIX: getEffectivePorts — Root cause of the "always 443" bug
+   Priority: per-user > ISP-template(ONLY if user actually has ISP) > global
+   ═══════════════════════════════════════════════════════════ */
+function getEffectivePorts(p, ispTemplate) {
+  // 1. Per-user explicit ports
+  if (p && p.userPorts && String(p.userPorts).trim()) {
+    const pp = parsePorts(p.userPorts);
+    if (pp.length > 0) return pp;
+  }
+  // 2. ISP template — ONLY when user has explicit ISP (not default fallback)
+  if (p && p.isp && ispTemplate && ispTemplate.ports && String(ispTemplate.ports).trim()) {
+    const ip = parsePorts(ispTemplate.ports);
+    if (ip.length > 0) return ip;
+  }
+  // 3. Global config ports
+  return parsePorts(sysConfig.socketPorts, ["443"]);
+}
 
 async function hashPassword(password, salt) {
   const data = new TextEncoder().encode(salt + ":" + password);
@@ -99,7 +135,7 @@ async function getEncryptionKey(masterKey) {
   if (_encKeyCache && _encKeyCacheSrc === masterKey) return _encKeyCache;
   const enc = new TextEncoder();
   const baseKey = await crypto.subtle.importKey("raw", enc.encode(masterKey || "default"), "PBKDF2", false, ["deriveKey"]);
-  const key = await crypto.subtle.deriveKey({ name:"PBKDF2", salt: enc.encode("hamed-panel-enc-v2"), iterations: 50000, hash:"SHA-256" }, baseKey, { name:"AES-GCM", length:256 }, false, ["encrypt","decrypt"]);
+  const key = await crypto.subtle.deriveKey({ name:"PBKDF2", salt: enc.encode("hamed-panel-enc-v3"), iterations: 50000, hash:"SHA-256" }, baseKey, { name:"AES-GCM", length:256 }, false, ["encrypt","decrypt"]);
   _encKeyCache = key; _encKeyCacheSrc = masterKey;
   return key;
 }
@@ -126,12 +162,14 @@ async function decryptSensitiveInConfig(cfg, mk) {
   return out;
 }
 
+/* ═══════ SYSTEM DEFAULTS ═══════ */
 const SYSTEM_DEFAULTS = {
   name:"", apiRoute:"sub",
   maintenanceHost:"https://www.ubuntu.com, https://www.docker.com",
   backupRelay:"", customRelay:"", masterKey:"admin", metricNode:"time.is",
   cleanIps:"", slaveNodes:"", deviceId:"", mode:"alpha", agent:"chrome",
-  socketPorts:"443,8443,2053,2083,2087,2096", customDns:"https://cloudflare-dns.com/dns-query",
+  socketPorts: CF_HTTPS_PORTS.join(","),
+  customDns:"https://cloudflare-dns.com/dns-query",
   resolveIp:"1.1.1.1", enableOpt1:false, enableOpt2:false,
   tgToken:"", tgChatId:"", tgAdminId:"", cfAccountId:"", cfApiToken:"",
   cfWorkerName:"", isPaused:false, silentAlerts:false,
@@ -151,7 +189,10 @@ const SYSTEM_DEFAULTS = {
     { id:"irancell", name:"ایرانسل", value:"1-3-1-2" },
     { id:"rightel", name:"رایتل", value:"1-1-1-1" },
     { id:"mokhaberat", name:"مخابرات", value:"1-2-1-1" },
+    { id:"shatel", name:"شاتل", value:"1-2-1-1" },
     { id:"aggressive", name:"تهاجمی", value:"5-10-5-10" },
+    { id:"light", name:"سبک", value:"1-1-1-1" },
+    { id:"heavy", name:"سنگین", value:"10-20-10-20" },
   ],
   activeFragment:"off", activeCarrier:"",
   autoCleanIpTest:false, autoCleanIpTopN:5,
@@ -160,12 +201,14 @@ const SYSTEM_DEFAULTS = {
   activeCleanRegions: ["de","us","ae"],
   cleanRegionMode: "round-robin",
   relayIpPresets: RELAY_IP_PRESETS,
+  /* FIX: default template has empty ports — falls through to global */
   ispTemplates: {
-    mci: { name:"همراه اول", fragment:"1-3-1-2", ports:"443", agent:"chrome", extraSni:"" },
-    irancell: { name:"ایرانسل", fragment:"1-3-1-2", ports:"443", agent:"chrome", extraSni:"" },
-    rightel: { name:"رایتل", fragment:"1-1-1-1", ports:"443", agent:"chrome", extraSni:"" },
-    mokhaberat: { name:"مخابرات", fragment:"1-2-1-1", ports:"443", agent:"chrome", extraSni:"" },
-    default: { name:"پیش‌فرض", fragment:"", ports:"443", agent:"chrome", extraSni:"" },
+    mci: { name:"همراه اول", fragment:"1-3-1-2", ports:"", agent:"chrome", extraSni:"" },
+    irancell: { name:"ایرانسل", fragment:"1-3-1-2", ports:"", agent:"chrome", extraSni:"" },
+    rightel: { name:"رایتل", fragment:"1-1-1-1", ports:"", agent:"chrome", extraSni:"" },
+    mokhaberat: { name:"مخابرات", fragment:"1-2-1-1", ports:"", agent:"chrome", extraSni:"" },
+    shatel: { name:"شاتل", fragment:"1-2-1-1", ports:"", agent:"chrome", extraSni:"" },
+    default: { name:"پیش‌فرض", fragment:"", ports:"", agent:"chrome", extraSni:"" },
   },
   iranRouting:true,
   autoResetCycles:{},
@@ -191,6 +234,8 @@ const SYSTEM_DEFAULTS = {
     { url:"https://dns.quad9.net/dns-query", name:"Quad9", weight:50, enabled:true },
     { url:"https://doh.shecan.ir/dns-query", name:"Shecan", weight:80, enabled:true },
     { url:"https://dns.adguard-dns.com/dns-query", name:"AdGuard", weight:50, enabled:true },
+    { url:"https://dns.electrotm.org/dns-query", name:"Electrotm", weight:40, enabled:true },
+    { url:"https://dns.begzar.ir/dns-query", name:"Begzar", weight:40, enabled:true },
   ],
   dnsPoolStrategy: "weighted",
   latencyMap: { byRegion:{}, lastUpdate:0 },
@@ -199,6 +244,7 @@ const SYSTEM_DEFAULTS = {
   nodeFailoverState: {},
   autoBanEnabled: false,
   _migratedToSub: false,
+  _migratedV107: false,
   inboundConfigs: {
     enabled: true,
     global: { nameTemplate: "{FLAG} {PREFIX}-{INDEX}", applyToAll: true, maxNameLength: 60, asciiOnly: false, prefix: "Hamed" },
@@ -208,7 +254,7 @@ const SYSTEM_DEFAULTS = {
       { tag:"COUNTRY", desc:"نام کشور", example:"Germany" },
       { tag:"CITY", desc:"نام شهر", example:"Frankfurt" },
       { tag:"ISP", desc:"نام ISP", example:"Cloudflare" },
-      { tag:"PROTOCOL", desc:"پروتکل (VLESS/Trojan)", example:"VLESS" },
+      { tag:"PROTOCOL", desc:"پروتکل", example:"VLESS" },
       { tag:"USER", desc:"نام کاربر", example:"ali" },
       { tag:"PORT", desc:"پورت کانفیگ", example:"443" },
       { tag:"PREFIX", desc:"پیشوند تنظیمات", example:"Hamed" },
@@ -252,23 +298,6 @@ let sysUsageCacheTime = 0;
 let sysHistoryCacheTime = 0;
 let backupIpCache = null;
 let backupIpCacheTime = 0;
-
-/* ═══════ Port Parser — handles newlines, commas, semicolons, spaces ═══════ */
-function parsePorts(raw, fallback) {
-  const list = String(raw || "").split(/[\r\n,;\s]+/).map(s => s.trim()).filter(Boolean);
-  const valid = list.filter(p => /^\d{1,5}$/.test(p) && parseInt(p) > 0 && parseInt(p) <= 65535);
-  return valid.length > 0 ? [...new Set(valid)] : (fallback || ["443"]);
-}
-
-/* ═══════ IP List Parser — newline/comma/semicolon ═══════ */
-function parseIpList(raw) {
-  if (!raw) return [];
-  return String(raw).split(/[\r\n,;]+/).map(s => {
-    const t = s.trim();
-    if (!t) return "";
-    return t.split("#")[0].trim();
-  }).filter(Boolean);
-}
 
 async function deployWorkerToCloudflare(accountId, apiToken, workerName, code) {
   let cb = [];
@@ -349,7 +378,7 @@ function sha224Hex(m) {
 const trojanHashCache = new Map();
 function getTrojanHash(uuid) { if (trojanHashCache.has(uuid)) return trojanHashCache.get(uuid); const h = sha224Hex(uuid); trojanHashCache.set(uuid, h); return h; }
 
-/* ═══════ UUID SYSTEM — Deterministic 24-char fingerprint ═══════ */
+/* ═══════ UUID SYSTEM — FNV-1a triple hash for 24-char fingerprint ═══════ */
 function getUserFingerprint(userId) {
   const s = String(userId || "").toLowerCase();
   let h1 = 0x811c9dc5 >>> 0, h2 = 0x811c9dc5 >>> 0, h3 = 0x811c9dc5 >>> 0;
@@ -553,12 +582,12 @@ async function runDueCronJobs(env, ctx) {
 function getIspTemplate(userIsp) {
   const templates = sysConfig.ispTemplates || {};
   if (userIsp && templates[userIsp]) return templates[userIsp];
-  return templates.default || { fragment:"", ports:"443", agent:"chrome", extraSni:"" };
+  return templates.default || { fragment:"", ports:"", agent:"chrome", extraSni:"" };
 }
 function applyIspTemplate(user, baseFragment) {
   const t = getIspTemplate(user?.isp);
-  if (!t) return { fragment: baseFragment, agent: sysConfig.agent || "chrome", ports: null, extraSni: "" };
-  return { fragment: t.fragment || baseFragment, agent: t.agent || sysConfig.agent || "chrome", ports: t.ports || null, extraSni: t.extraSni || "" };
+  if (!t) return { fragment: baseFragment, agent: sysConfig.agent || "chrome", ports: "", extraSni: "" };
+  return { fragment: t.fragment || baseFragment, agent: t.agent || sysConfig.agent || "chrome", ports: t.ports || "", extraSni: t.extraSni || "" };
 }
 
 async function sendCrisisBroadcast(env, message, presetId) {
@@ -693,7 +722,7 @@ function trackUsage(uuid, bytes, env, ctx) {
   }
 }
 
-/* ==================== INBOUND CONFIGS ENGINE ==================== */
+/* ═══════ INBOUND CONFIG ENGINE ═══════ */
 function buildInboundName(type, profile, ip, port, configIndex, hostName, regionInfo, isDirect) {
   try {
     const cfg = sysConfig.inboundConfigs || {};
@@ -764,6 +793,19 @@ export default {
         if (didChange) ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(() => {}));
       }
 
+      // v1.0.7 migration: fix legacy empty ISP template ports
+      if (!sysConfig._migratedV107) {
+        try {
+          const tmpl = sysConfig.ispTemplates || {};
+          for (const k of Object.keys(tmpl)) {
+            if (tmpl[k] && tmpl[k].ports === "443") tmpl[k].ports = ""; // reset legacy 443 → falls through to global
+          }
+          if (!Array.isArray(sysConfig.relayIpPresets) || sysConfig.relayIpPresets.length === 0) sysConfig.relayIpPresets = RELAY_IP_PRESETS;
+          sysConfig._migratedV107 = true;
+          ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(() => {}));
+        } catch (e) {}
+      }
+
       let reqPath = url.pathname;
       if (reqPath.endsWith("/") && reqPath.length > 1) reqPath = reqPath.slice(0,-1);
 
@@ -776,7 +818,9 @@ export default {
 
       const isPanelPath = reqPath === "/panel";
       const isTgPath = reqPath === `/${encodeURI(sysConfig.apiRoute)}/tg`;
-      if (clientIp && !isPanelPath && !isTgPath) { if (await isIpBanned(env, clientIp)) return new Response("403 Forbidden", { status: 403 }); }
+      if (clientIp && !isPanelPath && !isTgPath) {
+        try { if (await isIpBanned(env, clientIp)) return new Response("403 Forbidden", { status: 403 }); } catch (e) {}
+      }
 
       const R = sysConfig.apiRoute;
       const routes = {
@@ -803,6 +847,8 @@ export default {
         predictive:`/${encodeURI(R)}/api/predictive`,
         inbounds:`/${encodeURI(R)}/api/inbounds`, inboundsActions:`/${encodeURI(R)}/api/inbounds/actions`,
         relayPresets:`/${encodeURI(R)}/api/relay-presets`,
+        portsPresets:`/${encodeURI(R)}/api/ports-presets`,
+        userBulkAction:`/${encodeURI(R)}/api/users/bulk-action`,
       };
 
       const isAuthorizedRoute =
@@ -836,6 +882,7 @@ export default {
         }
         if (reqPath === routes.logs) return await handleLogs(request, env);
         if (reqPath === routes.bulkUsers) return await handleBulkUsers(request, env, ctx);
+        if (reqPath === routes.userBulkAction) return await handleUserBulkAction(request, env, ctx);
         if (reqPath === routes.users) return await handleUsersApi(request, env, ctx);
         if (reqPath === routes.managers) return await handleManagersApi(request, env, ctx);
         if (reqPath === routes.stats) return await handleStatsApi(request, env);
@@ -876,30 +923,54 @@ export default {
         if (reqPath === routes.inbounds) return await handleInboundsApi(request, env, ctx);
         if (reqPath === routes.inboundsActions) return await handleInboundsActions(request, env, ctx);
         if (reqPath === routes.relayPresets) return new Response(JSON.stringify({ ok:true, success:true, presets: sysConfig.relayIpPresets || RELAY_IP_PRESETS }), { headers:{ "Content-Type":"application/json" } });
+        if (reqPath === routes.portsPresets) return new Response(JSON.stringify({ ok:true, success:true, https: CF_HTTPS_PORTS, http: CF_HTTP_PORTS, all: CF_ALL_PORTS }), { headers:{ "Content-Type":"application/json" } });
         if (reqPath === routes.syncPanel) { if (request.method !== "POST") return new Response("405", { status:405 }); return await handleSyncPanel(request, env, ctx); }
         if (reqPath === routes.tg) { if (request.method !== "POST") return new Response("405", { status:405 }); return await handleTelegramWebhook(request, env, url.hostname, ctx); }
         if (reqPath === routes.data) return await handleSubscription(request, url, env, ctx);
       }
 
       if (isTelemetryStream) {
-        if (sysConfig.isPaused) return new Response(null, { status:503 });
-        let wsRelayIdx = -1;
-        try { const rp = url.searchParams.get("ri"); if (rp !== null) wsRelayIdx = parseInt(rp, 10); } catch (e) {}
-        if (wsRelayIdx < 0) { try { const ls = url.pathname.split("/").pop(); if (ls) { const n = parseInt(ls, 10); if (!isNaN(n) && n >= 0) wsRelayIdx = n; } } catch (e) {} }
-        if (wsRelayIdx < 0) { try { const ls = url.pathname.split("/").pop(); if (ls) { const d = JSON.parse(atob(ls)); if (typeof d.relayIdx === "number") wsRelayIdx = d.relayIdx; } } catch (e) {} }
-        return await processTelemetryStream(env, ctx, wsRelayIdx);
+        try {
+          if (sysConfig.isPaused) {
+            return await processTelemetryStream(env, ctx, -1, true);
+          }
+          let wsRelayIdx = -1;
+          try { const rp = url.searchParams.get("ri"); if (rp !== null) wsRelayIdx = parseInt(rp, 10); } catch (e) {}
+          if (wsRelayIdx < 0) { try { const ls = url.pathname.split("/").pop(); if (ls) { const n = parseInt(ls, 10); if (!isNaN(n) && n >= 0) wsRelayIdx = n; } } catch (e) {} }
+          if (wsRelayIdx < 0) { try { const ls = url.pathname.split("/").pop(); if (ls) { const d = JSON.parse(atob(ls)); if (typeof d.relayIdx === "number") wsRelayIdx = d.relayIdx; } } catch (e) {} }
+          return await processTelemetryStream(env, ctx, wsRelayIdx, false);
+        } catch (wsErr) {
+          // FIX 1011: Never throw — always return a valid 101 upgrade response
+          try {
+            const pair = new WebSocketPair();
+            const [c, s] = Object.values(pair);
+            s.accept();
+            try { s.close(1011, "init-error"); } catch (e) {}
+            return new Response(null, { status: 101, webSocket: c });
+          } catch (e) {
+            return new Response("WS Error", { status: 500 });
+          }
+        }
       }
       return new Response(null, { status:404 });
-    } catch (err) { return new Response(null, { status:404 }); }
+    } catch (err) {
+      // Ultimate fallback — if anything fails, just serve maintenance
+      try {
+        const url = new URL(request.url);
+        return await serveMaintenancePage(request, url);
+      } catch (e) {
+        return new Response("Error", { status: 500 });
+      }
+    }
   },
 
   async scheduled(event, env, ctx) {
     try {
       await loadSysConfig(env, ctx);
       await ensureRootManager();
-      ctx.waitUntil(cleanupExpiredSessions(env));
-      ctx.waitUntil(runDueCronJobs(env, ctx));
-      if (sysConfig.autoCleanIpTest && Date.now() - lastCleanIpTest > 3600 * 1000) ctx.waitUntil(runCleanIpTest(env));
+      try { await cleanupExpiredSessions(env); } catch (e) {}
+      try { await runDueCronJobs(env, ctx); } catch (e) {}
+      if (sysConfig.autoCleanIpTest && Date.now() - lastCleanIpTest > 3600 * 1000) { try { await runCleanIpTest(env); } catch (e) {} }
       if (!sysConfig.autoResetCycles) sysConfig.autoResetCycles = {};
       for (const userId in sysConfig.autoResetCycles) {
         const cycle = sysConfig.autoResetCycles[userId];
@@ -914,21 +985,39 @@ export default {
       await cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache));
       await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
       if (sysConfig.cfUsageAlert?.enabled && sysConfig.cfAccountId && sysConfig.cfApiToken) {
-        const reqs = await fetchCloudflareUsage(sysConfig.cfAccountId, sysConfig.cfApiToken);
-        if (reqs !== null) {
-          const pct = (reqs / 100000) * 100;
-          if (pct >= (sysConfig.cfUsageAlert.thresholdPct || 80) && Date.now() - (sysConfig.cfUsageAlert.lastAlert || 0) > 6 * 3600 * 1000) {
-            sysConfig.cfUsageAlert.lastAlert = Date.now();
-            if (sysConfig.tgToken && (sysConfig.tgAdminId || sysConfig.tgChatId)) {
-              ctx.waitUntil(fetch(`https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ chat_id: sysConfig.tgAdminId || sysConfig.tgChatId, text: `⚠️ <b>CF Usage Alert</b>\n\nمصرف به ${pct.toFixed(1)}% رسید.`, parse_mode:"HTML" }), signal: AbortSignal.timeout(8000) }).catch(() => {}));
+        try {
+          const reqs = await fetchCloudflareUsage(sysConfig.cfAccountId, sysConfig.cfApiToken);
+          if (reqs !== null) {
+            const pct = (reqs / 100000) * 100;
+            if (pct >= (sysConfig.cfUsageAlert.thresholdPct || 80) && Date.now() - (sysConfig.cfUsageAlert.lastAlert || 0) > 6 * 3600 * 1000) {
+              sysConfig.cfUsageAlert.lastAlert = Date.now();
+              if (sysConfig.tgToken && (sysConfig.tgAdminId || sysConfig.tgChatId)) {
+                fetch(`https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ chat_id: sysConfig.tgAdminId || sysConfig.tgChatId, text: `⚠️ <b>CF Usage Alert</b>\n\nمصرف به ${pct.toFixed(1)}% رسید.`, parse_mode:"HTML" }), signal: AbortSignal.timeout(8000) }).catch(() => {});
+              }
             }
+            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
           }
-          await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-        }
+        } catch (e) {}
       }
       if ((Date.now() - (sysConfig.nodeFailoverState.lastCheck || 0)) > (sysConfig.autoFailover?.healthCheckIntervalMin || 15) * 60 * 1000) {
         sysConfig.nodeFailoverState.lastCheck = Date.now();
-        ctx.waitUntil(runNodeHealthCheck(env));
+        try { await runNodeHealthCheck(env); } catch (e) {}
+      }
+      if (sysConfig.autoUpdate && sysConfig.cfAccountId && sysConfig.cfApiToken && sysConfig.cfWorkerName) {
+        try {
+          const repo = (sysConfig.githubRepo || "").replace(/https?:\/\/github\.com\//,"").trim();
+          if (repo) {
+            let rv = null;
+            try { const r = await fetch(`https://raw.githubusercontent.com/${repo}/main/version`, { signal: AbortSignal.timeout(8000) }); if (r.ok) rv = (await r.text()).trim(); } catch (e) {}
+            if (rv && cmpVersions(CURRENT_VERSION, rv) < 0) {
+              try {
+                let r = await fetch(`https://raw.githubusercontent.com/${repo}/main/_worker.encode.js`, { signal: AbortSignal.timeout(15000) });
+                if (!r.ok) r = await fetch(`https://raw.githubusercontent.com/${repo}/main/_worker.js`, { signal: AbortSignal.timeout(15000) });
+                if (r.ok) { const code = await r.text(); const dr = await deployWorkerToCloudflare(sysConfig.cfAccountId, sysConfig.cfApiToken, sysConfig.cfWorkerName, code); const dres = await dr.json(); if (dres.success) await logActivity(env, "Auto-Update Success", `v${rv}`); }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
       }
     } catch (e) {}
   }
@@ -1067,6 +1156,11 @@ async function handleConfigSync(request, env, ctx) {
       const preserveApiKeys = sysConfig.panelApiKeys || [];
       const preserveManagers = sysConfig.managers || [];
       nextConfig = { ...sysConfig, ...data.config };
+      // Normalize ports to string
+      if (Array.isArray(nextConfig.socketPorts)) nextConfig.socketPorts = nextConfig.socketPorts.join(",");
+      if (nextConfig.socketPorts && typeof nextConfig.socketPorts === "string") {
+        nextConfig.socketPorts = parsePorts(nextConfig.socketPorts, CF_HTTPS_PORTS).join(",");
+      }
       if (Array.isArray(nextConfig.users)) nextConfig.users = nextConfig.users.map(u => ({...u}));
       if (preserveApiKeys.length > 0 && (!data.config.panelApiKeys || data.config.panelApiKeys.length === 0)) nextConfig.panelApiKeys = preserveApiKeys;
       if (!data.config.managers) nextConfig.managers = preserveManagers;
@@ -1160,6 +1254,7 @@ async function handleUsersApi(request, env, ctx) {
       const body = await request.json();
       const { name, trafficLimit, expiryDays, notes, maxConfigs, proxyIp, cleanIp, userMode, userPorts, userNodes, nat64, connLimit, userPanelUrl, groupId, autoReset, isp, bandwidthKbps, tags, relayIps, relayMode, relayPresetId } = body;
       if (!name) return new Response(JSON.stringify({ ok:false, success:false, error:"Name required" }), { status:400 });
+      if ((sysConfig.users || []).some(u => u.name.toLowerCase() === String(name).toLowerCase())) return new Response(JSON.stringify({ ok:false, success:false, error:"نام کاربری موجود است" }), { status:409 });
       const newId = generateId("u");
       const grp = (sysConfig.userGroups || []).find(g => g.id === (groupId || "default")) || {};
       const newUser = {
@@ -1257,6 +1352,34 @@ async function handleUsersApi(request, env, ctx) {
   } catch (e) { return new Response(JSON.stringify({ ok:false, success:false, error:e.message }), { status:500, headers:{ "Content-Type":"application/json" } }); }
 }
 
+async function handleUserBulkAction(request, env, ctx) {
+  try {
+    const perm = await requirePermission(request, env, null, "users");
+    if (!perm.ok) return new Response(JSON.stringify({ ok:false, success:false }), { status:perm.status });
+    const body = await request.json();
+    const ids = Array.isArray(body.ids) ? body.ids : [];
+    const action = body.action;
+    if (!ids.length || !action) return new Response(JSON.stringify({ ok:false, success:false, error:"ids and action required" }), { status:400 });
+    let affected = 0;
+    const users = sysConfig.users || [];
+    if (!sysUsageCache.users) sysUsageCache.users = {};
+    for (const id of ids) {
+      const u = users.find(x => x.id === id);
+      if (!u) continue;
+      if (action === "pause") { u.isPaused = true; affected++; }
+      else if (action === "resume") { u.isPaused = false; u.disabledReason = null; u.disabledAt = null; affected++; }
+      else if (action === "reset") { const c = id.replace(/-/g,"").toLowerCase(); if (sysUsageCache.users[c]) { sysUsageCache.users[c].reqs = 0; sysUsageCache.users[c].dReqs = 0; } else sysUsageCache.users[c] = { reqs:0, dReqs:0, lastDay: todayStr() }; affected++; }
+      else if (action === "extend" && body.days) { const d = parseInt(body.days) || 0; if (u.expiryMs) u.expiryMs += d*86400000; else u.expiryMs = Date.now() + d*86400000; affected++; }
+      else if (action === "add-tag" && body.tag) { u.tags = u.tags || []; if (!u.tags.includes(body.tag)) u.tags.push(body.tag); affected++; }
+      else if (action === "remove-tag" && body.tag) { u.tags = (u.tags || []).filter(t => t !== body.tag); affected++; }
+      else if (action === "set-group" && body.groupId) { u.groupId = body.groupId; affected++; }
+    }
+    await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+    await cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache));
+    return new Response(JSON.stringify({ ok:true, success:true, affected }), { headers:{ "Content-Type":"application/json" } });
+  } catch (e) { return new Response(JSON.stringify({ ok:false, success:false, error:e.message }), { status:500 }); }
+}
+
 async function handleBulkUsers(request, env, ctx) {
   try {
     const method = request.method;
@@ -1282,7 +1405,7 @@ async function handleBulkUsers(request, env, ctx) {
           if (!name) { errors.push(`Line ${i+1}: empty`); continue; }
           if ((sysConfig.users||[]).some(u => u.name.toLowerCase() === name.toLowerCase())) { errors.push(`Line ${i+1}: duplicate`); continue; }
           const newId = generateId("u");
-          const newUser = { id:newId, name, groupId: cols[1]||"default", isp: cols[2]||null, limitTotalReq: parseFloat(cols[3])>0?Math.floor(parseFloat(cols[3])*6000):null, limitDailyReq: parseFloat(cols[4])>0?Math.floor(parseFloat(cols[4])*6000):null, expiryMs: parseInt(cols[5])>0?Date.now()+parseInt(cols[5])*86400000:null, maxConfigs: parseInt(cols[6])>0?parseInt(cols[6]):null, connLimit: parseInt(cols[7])>0?parseInt(cols[7]):null, bandwidthKbps: parseInt(cols[8])>0?parseInt(cols[8]):null, notes: (cols[9]||"").replace(/^"|"$/g,"").trim(), relayIps:"", relayMode:"single", createdAt: Date.now() };
+          const newUser = { id:newId, name, groupId: cols[1]||"default", isp: cols[2]||null, limitTotalReq: parseFloat(cols[3])>0?Math.floor(parseFloat(cols[3])*6000):null, limitDailyReq: parseFloat(cols[4])>0?Math.floor(parseFloat(cols[4])*6000):null, expiryMs: parseInt(cols[5])>0?Date.now()+parseInt(cols[5])*86400000:null, maxConfigs: parseInt(cols[6])>0?parseInt(cols[6]):null, connLimit: parseInt(cols[7])>0?parseInt(cols[7]):null, bandwidthKbps: parseInt(cols[8])>0?parseInt(cols[8]):null, notes: (cols[9]||"").replace(/^"|"$/g,"").trim(), relayIps:"", relayMode:"single", relayPresetId:"", createdAt: Date.now() };
           if (!sysConfig.users) sysConfig.users = [];
           sysConfig.users.push(newUser);
           created.push(name);
@@ -1399,7 +1522,7 @@ async function handleStatsApi(request, env) {
     const today = todayStr();
     users.forEach(u => { const c = u.id.replace(/-/g,"").toLowerCase(); const sysU = sysUsageCache?.users?.[c] || { reqs:0, dReqs:0, lastDay:"" }; totalReqs += sysU.reqs || 0; if (sysU.lastDay === today) dailyReqs += sysU.dReqs || 0; });
     const topUsers = users.map(u => { const c = u.id.replace(/-/g,"").toLowerCase(); const s = sysUsageCache?.users?.[c] || { reqs:0 }; return { name:u.name, gb: parseFloat(((s.reqs||0)/6000).toFixed(2)) }; }).sort((a,b) => b.gb - a.gb).slice(0, 5);
-    const payload = { users:{ total, active, paused, expired, autoDisabled:autoOff }, traffic:{ totalRequests: totalReqs, totalGB:(totalReqs/6000).toFixed(2), dailyRequests: dailyReqs, dailyGB:(dailyReqs/6000).toFixed(2) }, system:{ uptimeSeconds: Math.floor((Date.now()-isolateStartTime)/1000), activeConnections, version: CURRENT_VERSION, isPaused: sysConfig.isPaused || false, topUsers } };
+    const payload = { users:{ total, active, paused, expired, autoDisabled:autoOff }, traffic:{ totalRequests: totalReqs, totalGB:(totalReqs/6000).toFixed(2), dailyRequests: dailyReqs, dailyGB:(dailyReqs/6000).toFixed(2) }, system:{ uptimeSeconds: Math.floor((Date.now()-isolateStartTime)/1000), activeConnections, version: CURRENT_VERSION, isPaused: sysConfig.isPaused || false, topUsers, ports: parsePorts(sysConfig.socketPorts, CF_HTTPS_PORTS) } };
     return new Response(JSON.stringify({ ok:true, success:true, data:payload, stats:payload }), { headers:{ "Content-Type":"application/json" } });
   } catch (e) { return new Response(JSON.stringify({ ok:false, success:false, error:e.message }), { status:500 }); }
 }
@@ -1518,7 +1641,7 @@ async function handleRegionsApi(request, env, ctx) {
     if (method === "POST") {
       const body = await request.json();
       if (body.action === "update") { sysConfig.cleanIpRegions = body.regions || []; sysConfig.activeCleanRegions = body.active || []; if (body.mode) sysConfig.cleanRegionMode = body.mode; await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); return new Response(JSON.stringify({ ok:true, success:true })); }
-      if (body.action === "add") { if (!sysConfig.cleanIpRegions) sysConfig.cleanIpRegions = []; sysConfig.cleanIpRegions.push({ id: body.id || generateId("r"), name: body.name || "جدید", flag: body.flag || "🌐", ips: (body.ips || "").split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean) }); await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); return new Response(JSON.stringify({ ok:true, success:true })); }
+      if (body.action === "add") { if (!sysConfig.cleanIpRegions) sysConfig.cleanIpRegions = []; sysConfig.cleanIpRegions.push({ id: body.id || generateId("r"), name: body.name || "جدید", flag: body.flag || "🌐", ips: parseIpList(body.ips) }); await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); return new Response(JSON.stringify({ ok:true, success:true })); }
       if (body.action === "delete") { sysConfig.cleanIpRegions = (sysConfig.cleanIpRegions || []).filter(r => r.id !== body.id); sysConfig.activeCleanRegions = (sysConfig.activeCleanRegions || []).filter(r => r !== body.id); await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); return new Response(JSON.stringify({ ok:true, success:true })); }
       if (body.action === "toggle") { const active = sysConfig.activeCleanRegions || []; if (active.includes(body.id)) sysConfig.activeCleanRegions = active.filter(x => x !== body.id); else sysConfig.activeCleanRegions = [...active, body.id]; await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); return new Response(JSON.stringify({ ok:true, success:true, active: sysConfig.activeCleanRegions })); }
     }
@@ -1964,6 +2087,9 @@ async function handleSuggestions(request, env) {
     if ((sysConfig.webhooks || []).length === 0) suggestions.push({ level:"info", icon:"webhook", title:"افزودن Webhook", desc:"برای اتصال به Slack/Discord.", action:"tab:webhooks" });
     if ((sysConfig.workflows || []).length === 0) suggestions.push({ level:"info", icon:"workflows", title:"ساخت Workflow", desc:"اتوماسیون خودکار بسازید.", action:"tab:workflows" });
     if (sysConfig.inboundConfigs?.enabled === false) suggestions.push({ level:"info", icon:"tag", title:"فعال‌سازی Inbound Configs", desc:"سیستم نام‌گذاری سفارشی خاموش است.", action:"tab:inbounds" });
+    // v1.0.7 new: Port suggestion
+    const ports = parsePorts(sysConfig.socketPorts, ["443"]);
+    if (ports.length === 1) suggestions.push({ level:"info", icon:"ports", title:"افزودن پورت‌های بیشتر", desc:"فقط یک پورت تنظیم شده. پورت‌های بیشتری اضافه کنید.", action:"tab:settings" });
     return new Response(JSON.stringify({ ok:true, success:true, data:suggestions, suggestions }), { headers:{ "Content-Type":"application/json" } });
   } catch (e) { return new Response(JSON.stringify({ ok:false, success:false }), { status:500 }); }
 }
@@ -1986,97 +2112,101 @@ async function handlePredictive(request, env) {
 
 /* ==================== SUBSCRIPTION ==================== */
 async function handleSubscription(request, url, env, ctx) {
-  const ua = (request.headers.get("User-Agent") || "").toLowerCase();
-  const isCustomUaAllowed = sysConfig.subUserAgent && sysConfig.subUserAgent.trim().length > 0 && ua.includes(sysConfig.subUserAgent.trim().toLowerCase());
-  const clientHost = request.headers.get("Host") || url.hostname;
-  let targetSub = url.searchParams.get("sub");
-  const hasMultiUser = sysConfig.users && sysConfig.users.length > 0;
-  let targetUser = null, isValidUser = false;
-  if (hasMultiUser) { if (targetSub) { targetUser = sysConfig.users.find(u => u.name.toLowerCase() === targetSub.toLowerCase() || u.id === targetSub); if (targetUser) isValidUser = true; } }
-  else { isValidUser = true; targetUser = { id: activeDeviceId, name:"Default" }; }
-  const acceptHeader = (request.headers.get("Accept") || "").toLowerCase();
-  const secFetchDest = (request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
-  const isRealBrowser = (secFetchDest === "document" || acceptHeader.includes("text/html")) && (ua.includes("mozilla") || ua.includes("chrome") || ua.includes("safari") || ua.includes("applewebkit") || ua.includes("gecko")) && !ua.includes("cla"+"sh") && !ua.includes("si"+"ng-box") && !ua.includes("v"+"2r"+"ay") && !ua.includes("shadow"+"rocket");
+  try {
+    const ua = (request.headers.get("User-Agent") || "").toLowerCase();
+    const isCustomUaAllowed = sysConfig.subUserAgent && sysConfig.subUserAgent.trim().length > 0 && ua.includes(sysConfig.subUserAgent.trim().toLowerCase());
+    const clientHost = request.headers.get("Host") || url.hostname;
+    let targetSub = url.searchParams.get("sub");
+    const hasMultiUser = sysConfig.users && sysConfig.users.length > 0;
+    let targetUser = null, isValidUser = false;
+    if (hasMultiUser) { if (targetSub) { targetUser = sysConfig.users.find(u => u.name.toLowerCase() === targetSub.toLowerCase() || u.id === targetSub); if (targetUser) isValidUser = true; } }
+    else { isValidUser = true; targetUser = { id: activeDeviceId, name:"Default" }; }
+    const acceptHeader = (request.headers.get("Accept") || "").toLowerCase();
+    const secFetchDest = (request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
+    const isRealBrowser = (secFetchDest === "document" || acceptHeader.includes("text/html")) && (ua.includes("mozilla") || ua.includes("chrome") || ua.includes("safari") || ua.includes("applewebkit") || ua.includes("gecko")) && !ua.includes("cla"+"sh") && !ua.includes("si"+"ng-box") && !ua.includes("v"+"2r"+"ay") && !ua.includes("shadow"+"rocket");
 
-  if (isRealBrowser && !isCustomUaAllowed) {
-    if (isValidUser) {
-      try {
-        let html = SUBSCRIPTION_HTML;
-        const idClean = targetUser.id.replace(/-/g,"").toLowerCase();
-        const sysU = sysUsageCache?.users?.[idClean] || { reqs:0, dReqs:0, lastDay:"" };
-        const totalReqs = sysU.reqs || 0;
-        const today = todayStr();
-        const dailyReqs = sysU.lastDay === today ? (sysU.dReqs || 0) : 0;
-        const limitTotal = targetUser.limitTotalReq || 0;
-        const limitDaily = targetUser.limitDailyReq || 0;
-        const totalGb = (totalReqs/6000).toFixed(2);
-        const limitTotalGb = limitTotal ? (limitTotal/6000).toFixed(2) : "∞";
-        const dailyGb = (dailyReqs/6000).toFixed(2);
-        const limitDailyGb = limitDaily ? (limitDaily/6000).toFixed(2) : "∞";
-        const totalPercent = limitTotal ? Math.min(100, (totalReqs/limitTotal)*100).toFixed(1) : "0";
-        const dailyPercent = limitDaily ? Math.min(100, (dailyReqs/limitDaily)*100).toFixed(1) : "0";
-        let expiryDateTxt = "—", daysLeft = "∞", isExpired = false;
-        if (targetUser.expiryMs) { expiryDateTxt = new Date(targetUser.expiryMs).toISOString().split("T")[0]; const rem = Math.ceil((targetUser.expiryMs - Date.now())/86400000); daysLeft = rem >= 0 ? rem : 0; if (Date.now() > targetUser.expiryMs) isExpired = true; }
-        let statusCode = "active";
-        if (targetUser.isPaused) statusCode = "paused"; else if (isExpired) statusCode = "expired"; else if (limitTotal && totalReqs >= limitTotal) statusCode = "limit"; else if (limitDaily && dailyReqs >= limitDaily) statusCode = "dailyLimit";
-        let cleanUrl = new URL(url.href);
-        let panelUrlToUse = sysConfig.customPanelUrl;
-        if (targetUser.userPanelUrl && targetUser.userPanelUrl.trim()) panelUrlToUse = targetUser.userPanelUrl.trim();
-        if (panelUrlToUse) { let c = panelUrlToUse; if (!c.startsWith("http")) c = "https://" + c; try { const cu = new URL(c); cleanUrl.protocol = cu.protocol; cleanUrl.host = cu.host; } catch (e) {} }
-        cleanUrl.searchParams.delete("flag"); cleanUrl.searchParams.delete("format"); cleanUrl.searchParams.delete("type"); cleanUrl.searchParams.delete("output"); cleanUrl.searchParams.delete("raw");
-        const syncNormal = cleanUrl.href;
-        const syncRaw = cleanUrl.href + (cleanUrl.href.includes("?") ? "&flag=a" : "?flag=a");
-        const frag = getActiveFragmentValue();
-        const fragHtml = frag ? '<div class="frg">Fragment: <code>' + frag + '</code></div>' : "";
-        const logoHtml = sysConfig.customLogo ? '<img src="' + sysConfig.customLogo + '" style="width:78px;height:78px;border-radius:22px;object-fit:cover" alt="logo">' : "";
-        const tags = (targetUser.tags || []).length > 0 ? '<div class="frg">Tags: ' + targetUser.tags.join(", ") + '</div>' : "";
-        html = html.replace(/__USER_NAME__/g, targetUser.name).replace(/__USER_ID__/g, targetUser.id).replace(/__STATUS_CODE__/g, statusCode).replace(/__TOTAL_GB__/g, totalGb).replace(/__LIMIT_TOTAL_GB__/g, limitTotalGb).replace(/__TOTAL_PERCENT__/g, totalPercent + "%").replace(/__DAILY_GB__/g, dailyGb).replace(/__LIMIT_DAILY_GB__/g, limitDailyGb).replace(/__DAILY_PERCENT__/g, dailyPercent + "%").replace(/__EXPIRY_DATE__/g, expiryDateTxt).replace(/__DAYS_LEFT__/g, daysLeft).replace(/__SYNC_NORMAL__/g, syncNormal).replace(/__SYNC_RAW__/g, syncRaw).replace(/__PANEL_NAME__/g, sysConfig.name || PANEL_BRAND).replace(/__FRAGMENT_BADGE__/g, fragHtml + tags).replace(/__CUSTOM_LOGO_BLOCK__/g, logoHtml).replace(/__CURRENT_VERSION__/g, CURRENT_VERSION).replace(/__OTTER_SVG__/g, OTTER_SVG);
-        return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8" } });
-      } catch (e) { return new Response("Failed", { status:502 }); }
-    } else return serveMaintenancePage(request, url);
-  }
-  if (hasMultiUser && !isValidUser) return new Response("Error", { status:403 });
-  const allowInsecure = url.searchParams.get("insecure") === "true" || url.searchParams.get("allowInsecure") === "true";
-  const resHeaders = new Headers();
-  resHeaders.set("Cache-Control","no-store");
-  resHeaders.set("Access-Control-Allow-Origin","*");
-  let flag = (url.searchParams.get("flag") || url.searchParams.get("format") || url.searchParams.get("type") || "").toLowerCase();
-  if (isValidUser && targetUser) {
-    const idClean = targetUser.id.replace(/-/g,"").toLowerCase();
-    const sysU = sysUsageCache?.users?.[idClean] || { reqs:0 };
-    const totalReqs = sysU.reqs || 0;
-    let limitTotal = 0, expiryMs = 0;
-    if (hasMultiUser) { limitTotal = targetUser.limitTotalReq || 0; expiryMs = targetUser.expiryMs || 0; }
-    else { limitTotal = sysConfig.limitTotalReq || 0; expiryMs = sysConfig.expiryMs || 0; }
-    const usedBytes = Math.floor(totalReqs * (1073741824/6000));
-    const limitBytes = Math.floor(limitTotal * (1073741824/6000));
-    const expireSec = expiryMs ? Math.floor(expiryMs/1000) : 0;
-    resHeaders.set("Subscription-UserInfo", `upload=0; download=${usedBytes}; total=${limitBytes}; expire=${expireSec}`);
-    const cleanName = encodeURIComponent(targetUser.name);
-    resHeaders.set("Content-Disposition", `attachment; filename="${cleanName}"; filename*=UTF-8''${cleanName}`);
-  }
-  let isClashYaml = false, isSingboxJson = false, isClashJson = false, isVJson = false, isSurge = false, isLoon = false;
-  if (flag === "clash" || flag === "yaml" || flag === "meta" || flag === "stash" || flag === "y") isClashYaml = true;
-  else if (flag === "b") isClashJson = true;
-  else if (flag === "sing" || flag === "singbox" || flag === "sing-box" || flag === "sb" || flag === "s" || flag === "c" || flag === "g") isSingboxJson = true;
-  else if (flag === "vjson" || flag === "v") isVJson = true;
-  else if (flag === "surge") isSurge = true;
-  else if (flag === "loon") isLoon = true;
-  else if (flag === "a" || flag === "raw" || flag === "") {
-    if (ua.includes(getGamma()) || ua.includes("meta") || ua.includes("mihomo") || ua.includes("clash")) isClashYaml = true;
-    else if (ua.includes("sing-box") || ua.includes("singbox") || ua.includes("karing")) isSingboxJson = true;
-    else if (ua.includes("surge")) isSurge = true;
-    else if (ua.includes("loon")) isLoon = true;
-  }
-  if (isClashYaml) { resHeaders.set("Content-Type","text/yaml; charset=utf-8"); return new Response(await buildYamlProfile(clientHost, targetSub, allowInsecure, env), { headers:resHeaders }); }
-  if (isSingboxJson) { resHeaders.set("Content-Type","application/json; charset=utf-8"); return new Response(JSON.stringify(await buildSingBoxJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers:resHeaders }); }
-  if (isClashJson) { resHeaders.set("Content-Type","application/json; charset=utf-8"); return new Response(JSON.stringify(await buildClashJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers:resHeaders }); }
-  if (isVJson) { resHeaders.set("Content-Type","application/json; charset=utf-8"); return new Response(JSON.stringify(await buildVJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers:resHeaders }); }
-  if (isSurge) { resHeaders.set("Content-Type","text/plain; charset=utf-8"); return new Response(await buildSurgeProfile(clientHost, targetSub, allowInsecure), { headers:resHeaders }); }
-  if (isLoon) { resHeaders.set("Content-Type","text/plain; charset=utf-8"); return new Response(await buildLoonProfile(clientHost, targetSub, allowInsecure), { headers:resHeaders }); }
-  resHeaders.set("Content-Type","text/plain; charset=utf-8");
-  const raw = await buildUriProfile(clientHost, targetSub, allowInsecure);
-  return new Response(safeBtoa(raw), { headers:resHeaders });
+    if (isRealBrowser && !isCustomUaAllowed) {
+      if (isValidUser) {
+        try {
+          let html = SUBSCRIPTION_HTML;
+          const idClean = targetUser.id.replace(/-/g,"").toLowerCase();
+          const sysU = sysUsageCache?.users?.[idClean] || { reqs:0, dReqs:0, lastDay:"" };
+          const totalReqs = sysU.reqs || 0;
+          const today = todayStr();
+          const dailyReqs = sysU.lastDay === today ? (sysU.dReqs || 0) : 0;
+          const limitTotal = targetUser.limitTotalReq || 0;
+          const limitDaily = targetUser.limitDailyReq || 0;
+          const totalGb = (totalReqs/6000).toFixed(2);
+          const limitTotalGb = limitTotal ? (limitTotal/6000).toFixed(2) : "∞";
+          const dailyGb = (dailyReqs/6000).toFixed(2);
+          const limitDailyGb = limitDaily ? (limitDaily/6000).toFixed(2) : "∞";
+          const totalPercent = limitTotal ? Math.min(100, (totalReqs/limitTotal)*100).toFixed(1) : "0";
+          const dailyPercent = limitDaily ? Math.min(100, (dailyReqs/limitDaily)*100).toFixed(1) : "0";
+          let expiryDateTxt = "—", daysLeft = "∞", isExpired = false;
+          if (targetUser.expiryMs) { expiryDateTxt = new Date(targetUser.expiryMs).toISOString().split("T")[0]; const rem = Math.ceil((targetUser.expiryMs - Date.now())/86400000); daysLeft = rem >= 0 ? rem : 0; if (Date.now() > targetUser.expiryMs) isExpired = true; }
+          let statusCode = "active";
+          if (targetUser.isPaused) statusCode = "paused"; else if (isExpired) statusCode = "expired"; else if (limitTotal && totalReqs >= limitTotal) statusCode = "limit"; else if (limitDaily && dailyReqs >= limitDaily) statusCode = "dailyLimit";
+          let cleanUrl = new URL(url.href);
+          let panelUrlToUse = sysConfig.customPanelUrl;
+          if (targetUser.userPanelUrl && targetUser.userPanelUrl.trim()) panelUrlToUse = targetUser.userPanelUrl.trim();
+          if (panelUrlToUse) { let c = panelUrlToUse; if (!c.startsWith("http")) c = "https://" + c; try { const cu = new URL(c); cleanUrl.protocol = cu.protocol; cleanUrl.host = cu.host; } catch (e) {} }
+          cleanUrl.searchParams.delete("flag"); cleanUrl.searchParams.delete("format"); cleanUrl.searchParams.delete("type"); cleanUrl.searchParams.delete("output"); cleanUrl.searchParams.delete("raw");
+          const syncNormal = cleanUrl.href;
+          const syncRaw = cleanUrl.href + (cleanUrl.href.includes("?") ? "&flag=a" : "?flag=a");
+          const frag = getActiveFragmentValue();
+          const fragHtml = frag ? '<div class="frg">Fragment: <code>' + frag + '</code></div>' : "";
+          const logoHtml = sysConfig.customLogo ? '<img src="' + sysConfig.customLogo + '" style="width:78px;height:78px;border-radius:22px;object-fit:cover" alt="logo">' : "";
+          const tags = (targetUser.tags || []).length > 0 ? '<div class="frg">Tags: ' + targetUser.tags.join(", ") + '</div>' : "";
+          const portsUsed = getEffectivePorts(targetUser, applyIspTemplate(targetUser, "")).slice(0, 8);
+          const portsHtml = '<div class="frg">Ports: <code>' + portsUsed.join(", ") + '</code></div>';
+          html = html.replace(/__USER_NAME__/g, targetUser.name).replace(/__USER_ID__/g, targetUser.id).replace(/__STATUS_CODE__/g, statusCode).replace(/__TOTAL_GB__/g, totalGb).replace(/__LIMIT_TOTAL_GB__/g, limitTotalGb).replace(/__TOTAL_PERCENT__/g, totalPercent + "%").replace(/__DAILY_GB__/g, dailyGb).replace(/__LIMIT_DAILY_GB__/g, limitDailyGb).replace(/__DAILY_PERCENT__/g, dailyPercent + "%").replace(/__EXPIRY_DATE__/g, expiryDateTxt).replace(/__DAYS_LEFT__/g, daysLeft).replace(/__SYNC_NORMAL__/g, syncNormal).replace(/__SYNC_RAW__/g, syncRaw).replace(/__PANEL_NAME__/g, sysConfig.name || PANEL_BRAND).replace(/__FRAGMENT_BADGE__/g, fragHtml + tags + portsHtml).replace(/__CUSTOM_LOGO_BLOCK__/g, logoHtml).replace(/__CURRENT_VERSION__/g, CURRENT_VERSION).replace(/__OTTER_SVG__/g, OTTER_SVG);
+          return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8" } });
+        } catch (e) { return new Response("Failed", { status:502 }); }
+      } else return serveMaintenancePage(request, url);
+    }
+    if (hasMultiUser && !isValidUser) return new Response("Error", { status:403 });
+    const allowInsecure = url.searchParams.get("insecure") === "true" || url.searchParams.get("allowInsecure") === "true";
+    const resHeaders = new Headers();
+    resHeaders.set("Cache-Control","no-store");
+    resHeaders.set("Access-Control-Allow-Origin","*");
+    let flag = (url.searchParams.get("flag") || url.searchParams.get("format") || url.searchParams.get("type") || "").toLowerCase();
+    if (isValidUser && targetUser) {
+      const idClean = targetUser.id.replace(/-/g,"").toLowerCase();
+      const sysU = sysUsageCache?.users?.[idClean] || { reqs:0 };
+      const totalReqs = sysU.reqs || 0;
+      let limitTotal = 0, expiryMs = 0;
+      if (hasMultiUser) { limitTotal = targetUser.limitTotalReq || 0; expiryMs = targetUser.expiryMs || 0; }
+      else { limitTotal = sysConfig.limitTotalReq || 0; expiryMs = sysConfig.expiryMs || 0; }
+      const usedBytes = Math.floor(totalReqs * (1073741824/6000));
+      const limitBytes = Math.floor(limitTotal * (1073741824/6000));
+      const expireSec = expiryMs ? Math.floor(expiryMs/1000) : 0;
+      resHeaders.set("Subscription-UserInfo", `upload=0; download=${usedBytes}; total=${limitBytes}; expire=${expireSec}`);
+      const cleanName = encodeURIComponent(targetUser.name);
+      resHeaders.set("Content-Disposition", `attachment; filename="${cleanName}"; filename*=UTF-8''${cleanName}`);
+    }
+    let isClashYaml = false, isSingboxJson = false, isClashJson = false, isVJson = false, isSurge = false, isLoon = false;
+    if (flag === "clash" || flag === "yaml" || flag === "meta" || flag === "stash" || flag === "y") isClashYaml = true;
+    else if (flag === "b") isClashJson = true;
+    else if (flag === "sing" || flag === "singbox" || flag === "sing-box" || flag === "sb" || flag === "s" || flag === "c" || flag === "g") isSingboxJson = true;
+    else if (flag === "vjson" || flag === "v") isVJson = true;
+    else if (flag === "surge") isSurge = true;
+    else if (flag === "loon") isLoon = true;
+    else if (flag === "a" || flag === "raw" || flag === "") {
+      if (ua.includes(getGamma()) || ua.includes("meta") || ua.includes("mihomo") || ua.includes("clash")) isClashYaml = true;
+      else if (ua.includes("sing-box") || ua.includes("singbox") || ua.includes("karing")) isSingboxJson = true;
+      else if (ua.includes("surge")) isSurge = true;
+      else if (ua.includes("loon")) isLoon = true;
+    }
+    if (isClashYaml) { resHeaders.set("Content-Type","text/yaml; charset=utf-8"); return new Response(await buildYamlProfile(clientHost, targetSub, allowInsecure, env), { headers:resHeaders }); }
+    if (isSingboxJson) { resHeaders.set("Content-Type","application/json; charset=utf-8"); return new Response(JSON.stringify(await buildSingBoxJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers:resHeaders }); }
+    if (isClashJson) { resHeaders.set("Content-Type","application/json; charset=utf-8"); return new Response(JSON.stringify(await buildClashJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers:resHeaders }); }
+    if (isVJson) { resHeaders.set("Content-Type","application/json; charset=utf-8"); return new Response(JSON.stringify(await buildVJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers:resHeaders }); }
+    if (isSurge) { resHeaders.set("Content-Type","text/plain; charset=utf-8"); return new Response(await buildSurgeProfile(clientHost, targetSub, allowInsecure), { headers:resHeaders }); }
+    if (isLoon) { resHeaders.set("Content-Type","text/plain; charset=utf-8"); return new Response(await buildLoonProfile(clientHost, targetSub, allowInsecure), { headers:resHeaders }); }
+    resHeaders.set("Content-Type","text/plain; charset=utf-8");
+    const raw = await buildUriProfile(clientHost, targetSub, allowInsecure);
+    return new Response(safeBtoa(raw), { headers:resHeaders });
+  } catch (e) { return new Response("Error", { status: 500 }); }
 }
 function getActiveFragmentValue() {
   const id = sysConfig.activeFragment || "off";
@@ -2086,80 +2216,146 @@ function getActiveFragmentValue() {
   return found ? found.value : "";
 }
 
-/* ==================== TELEMETRY ==================== */
-async function processTelemetryStream(env, ctx, wsRelayIdx) {
-  const [client, webSocket] = Object.values(new WebSocketPair());
-  webSocket.accept();
-  webSocket.binaryType = "arraybuffer";
-  startDataPipe(webSocket, env, ctx, wsRelayIdx);
+/* ==================== TELEMETRY (FIX 1011) ==================== */
+async function processTelemetryStream(env, ctx, wsRelayIdx, paused) {
+  let client, webSocket;
+  try {
+    const pair = new WebSocketPair();
+    const keys = Object.keys(pair);
+    client = pair[keys[0]];
+    webSocket = pair[keys[1]];
+    webSocket.accept();
+    webSocket.binaryType = "arraybuffer";
+  } catch (e) {
+    return new Response("WebSocket unavailable", { status: 500 });
+  }
+  // FIX 1011: Always return the 101 upgrade response immediately
+  // Even if paused, we still need a valid WS to avoid 1011 errors.
+  try {
+    if (!paused) {
+      // Fire-and-forget — errors inside startDataPipe never propagate
+      startDataPipeSafe(webSocket, env, ctx, wsRelayIdx);
+    } else {
+      // Gracefully close after short delay
+      try { webSocket.close(1013, "Paused"); } catch (e) {}
+    }
+  } catch (e) {
+    try { webSocket.close(1011, "init"); } catch (ee) {}
+  }
   return new Response(null, { status:101, webSocket: client });
 }
+
+// FIX 1011: Wrapper that catches every async error
+function startDataPipeSafe(webSocket, env, ctx, wsRelayIdx) {
+  try {
+    startDataPipe(webSocket, env, ctx, wsRelayIdx).catch((e) => {
+      try { webSocket.close(1011, "pipe-error"); } catch (ee) {}
+    });
+  } catch (e) {
+    try { webSocket.close(1011, "sync-error"); } catch (ee) {}
+  }
+}
+
+// FIX 1011: never let an error escape
+function safeWsSend(ws, data) {
+  try { ws.send(data); return true; } catch (e) { return false; }
+}
+function safeWsClose(ws, code, reason) {
+  try { ws.close(code || 1000, reason || ""); } catch (e) {}
+}
+
 async function startDataPipe(webSocket, env, ctx, wsRelayIdx) {
   activeConnections++;
   let activeClientHash = null;
-  webSocket.addEventListener("close", () => { activeConnections--; if (activeClientHash) { const c = activeConns.get(activeClientHash) || 0; if (c > 0) activeConns.set(activeClientHash, c-1); } });
-  webSocket.addEventListener("error", () => {});
+  let closed = false;
+  webSocket.addEventListener("close", () => { closed = true; activeConnections--; if (activeClientHash) { const c = activeConns.get(activeClientHash) || 0; if (c > 0) activeConns.set(activeClientHash, c-1); } });
+  webSocket.addEventListener("error", () => { closed = true; });
   let remoteSocket, dataWriter, isInit = true, queue = Promise.resolve();
-  webSocket.addEventListener("message", (event) => { queue = queue.then(async () => { try { if (isInit) { isInit = false; const a = await parseSensorData(event.data, wsRelayIdx); if (a) webSocket.send(new Uint8Array([0,0])); } else if (dataWriter) await dataWriter.write(event.data); } catch (err) { webSocket.close(); } }); });
+  webSocket.addEventListener("message", (event) => {
+    queue = queue.then(async () => {
+      try {
+        if (closed) return;
+        if (isInit) {
+          isInit = false;
+          const a = await parseSensorData(event.data, wsRelayIdx);
+          if (a && !closed) safeWsSend(webSocket, new Uint8Array([0,0]));
+        } else if (dataWriter) {
+          try { await dataWriter.write(event.data); } catch (e) { safeWsClose(webSocket, 1011, "write-error"); }
+        }
+      } catch (err) { safeWsClose(webSocket, 1011, "msg-error"); }
+    }).catch(() => {});
+  });
   async function parseSensorData(bufferData, wsRelayIdx) {
-    const view = new Uint8Array(bufferData);
-    let targetAddr = "", targetPort = 0, offset = 0, isModeAlpha = false, activeProfile = null;
-    if (view[0] === 0x00) {
-      isModeAlpha = true;
-      const clientHash = Array.from(view.slice(1,17)).map(b => b.toString(16).padStart(2,"0")).join("");
-      let entry = lookupConfigEntry(clientHash);
-      if (entry) { activeClientHash = entry.userId.replace(/-/g,"").toLowerCase(); activeProfile = getAllProfiles().find(p => p.id.replace(/-/g,"").toLowerCase() === activeClientHash); if (!activeProfile) return false; if (entry.relayIp) activeProfile = { ...activeProfile, proxyIp: entry.relayIp }; }
-      else { const decoded = decodeConfigUuid(clientHash); if (decoded) { activeProfile = getAllProfiles().find(p => getUserFingerprint(p.id) === decoded.userFingerprint); if (activeProfile && decoded.relayIpIndex >= 0) { const pips = getEffectivePips(activeProfile); if (pips.length > 0) activeProfile = { ...activeProfile, proxyIp: pips[decoded.relayIpIndex % pips.length] }; } } if (!activeProfile) activeProfile = getAllProfiles().find(p => p.id.replace(/-/g,"").toLowerCase() === clientHash); if (!activeProfile) return false; activeClientHash = activeProfile.id.replace(/-/g,"").toLowerCase(); }
-      trackUsage(activeClientHash, 0, env, ctx);
-      const cur = activeConns.get(activeClientHash) || 0;
-      if (activeProfile.connLimit && cur >= activeProfile.connLimit) { webSocket.close(); return isModeAlpha; }
-      activeConns.set(activeClientHash, cur+1);
-      const optLen = view[17], pPos = 18 + optLen + 1;
-      targetPort = new DataView(bufferData.slice(pPos, pPos+2)).getUint16(0);
-      const aType = view[pPos+2]; let vPos = pPos+3, aLen = 0;
-      if (aType === 1) { aLen = 4; targetAddr = view.slice(vPos, vPos+aLen).join("."); } else if (aType === 2) { aLen = view[vPos]; vPos++; targetAddr = new TextDecoder().decode(view.slice(vPos, vPos+aLen)); } else if (aType === 3) { aLen = 16; const dv = new DataView(bufferData.slice(vPos, vPos+aLen)); targetAddr = Array.from({length:8}, (_,i) => dv.getUint16(i*2).toString(16)).join(":"); }
-      offset = vPos + aLen;
-    } else {
-      let ePos = bufferData.byteLength;
-      for (let i = 0; i < bufferData.byteLength; i++) if (view[i] === 0x0d && view[i+1] === 0x0a) { ePos = i; break; }
-      const clientHashHex = new TextDecoder().decode(view.slice(0, ePos));
-      let entry = lookupConfigEntry(clientHashHex);
-      if (entry) { activeClientHash = entry.userId.replace(/-/g,"").toLowerCase(); activeProfile = getAllProfiles().find(p => p.id.replace(/-/g,"").toLowerCase() === activeClientHash); if (!activeProfile) return false; if (entry.relayIp) activeProfile = { ...activeProfile, proxyIp: entry.relayIp }; }
-      else { activeProfile = getAllProfiles().find(p => getTrojanHash(p.id) === clientHashHex); if (!activeProfile) return false; activeClientHash = activeProfile.id.replace(/-/g,"").toLowerCase(); }
-      trackUsage(activeClientHash, 0, env, ctx);
-      const cur = activeConns.get(activeClientHash) || 0;
-      if (activeProfile.connLimit && cur >= activeProfile.connLimit) { webSocket.close(); return isModeAlpha; }
-      activeConns.set(activeClientHash, cur+1);
-      let hPos = ePos+2; hPos++;
-      const aType = view[hPos]; hPos++;
-      let aLen = 0;
-      if (aType === 1) { aLen = 4; targetAddr = view.slice(hPos, hPos+aLen).join("."); } else if (aType === 3) { aLen = view[hPos]; hPos++; targetAddr = new TextDecoder().decode(view.slice(hPos, hPos+aLen)); } else if (aType === 4) { aLen = 16; const dv = new DataView(bufferData.slice(hPos, hPos+aLen)); targetAddr = Array.from({length:8}, (_,i) => dv.getUint16(i*2).toString(16)).join(":"); }
-      hPos += aLen; targetPort = new DataView(bufferData.slice(hPos, hPos+2)).getUint16(0); offset = hPos+4;
+    try {
+      const view = new Uint8Array(bufferData);
+      let targetAddr = "", targetPort = 0, offset = 0, isModeAlpha = false, activeProfile = null;
+      if (view[0] === 0x00) {
+        isModeAlpha = true;
+        const clientHash = Array.from(view.slice(1,17)).map(b => b.toString(16).padStart(2,"0")).join("");
+        let entry = lookupConfigEntry(clientHash);
+        if (entry) { activeClientHash = entry.userId.replace(/-/g,"").toLowerCase(); activeProfile = getAllProfiles().find(p => p.id.replace(/-/g,"").toLowerCase() === activeClientHash); if (!activeProfile) return false; if (entry.relayIp) activeProfile = { ...activeProfile, proxyIp: entry.relayIp }; }
+        else { const decoded = decodeConfigUuid(clientHash); if (decoded) { activeProfile = getAllProfiles().find(p => getUserFingerprint(p.id) === decoded.userFingerprint); if (activeProfile && decoded.relayIpIndex >= 0) { const pips = getEffectivePips(activeProfile); if (pips.length > 0) activeProfile = { ...activeProfile, proxyIp: pips[decoded.relayIpIndex % pips.length] }; } } if (!activeProfile) activeProfile = getAllProfiles().find(p => p.id.replace(/-/g,"").toLowerCase() === clientHash); if (!activeProfile) return false; activeClientHash = activeProfile.id.replace(/-/g,"").toLowerCase(); }
+        try { trackUsage(activeClientHash, 0, env, ctx); } catch (e) {}
+        const cur = activeConns.get(activeClientHash) || 0;
+        if (activeProfile.connLimit && cur >= activeProfile.connLimit) { safeWsClose(webSocket, 1000, "limit"); return isModeAlpha; }
+        activeConns.set(activeClientHash, cur+1);
+        const optLen = view[17], pPos = 18 + optLen + 1;
+        targetPort = new DataView(bufferData.slice(pPos, pPos+2)).getUint16(0);
+        const aType = view[pPos+2]; let vPos = pPos+3, aLen = 0;
+        if (aType === 1) { aLen = 4; targetAddr = view.slice(vPos, vPos+aLen).join("."); } else if (aType === 2) { aLen = view[vPos]; vPos++; targetAddr = new TextDecoder().decode(view.slice(vPos, vPos+aLen)); } else if (aType === 3) { aLen = 16; const dv = new DataView(bufferData.slice(vPos, vPos+aLen)); targetAddr = Array.from({length:8}, (_,i) => dv.getUint16(i*2).toString(16)).join(":"); }
+        offset = vPos + aLen;
+      } else {
+        let ePos = bufferData.byteLength;
+        for (let i = 0; i < bufferData.byteLength; i++) if (view[i] === 0x0d && view[i+1] === 0x0a) { ePos = i; break; }
+        const clientHashHex = new TextDecoder().decode(view.slice(0, ePos));
+        let entry = lookupConfigEntry(clientHashHex);
+        if (entry) { activeClientHash = entry.userId.replace(/-/g,"").toLowerCase(); activeProfile = getAllProfiles().find(p => p.id.replace(/-/g,"").toLowerCase() === activeClientHash); if (!activeProfile) return false; if (entry.relayIp) activeProfile = { ...activeProfile, proxyIp: entry.relayIp }; }
+        else { activeProfile = getAllProfiles().find(p => getTrojanHash(p.id) === clientHashHex); if (!activeProfile) return false; activeClientHash = activeProfile.id.replace(/-/g,"").toLowerCase(); }
+        try { trackUsage(activeClientHash, 0, env, ctx); } catch (e) {}
+        const cur = activeConns.get(activeClientHash) || 0;
+        if (activeProfile.connLimit && cur >= activeProfile.connLimit) { safeWsClose(webSocket, 1000, "limit"); return isModeAlpha; }
+        activeConns.set(activeClientHash, cur+1);
+        let hPos = ePos+2; hPos++;
+        const aType = view[hPos]; hPos++;
+        let aLen = 0;
+        if (aType === 1) { aLen = 4; targetAddr = view.slice(hPos, hPos+aLen).join("."); } else if (aType === 3) { aLen = view[hPos]; hPos++; targetAddr = new TextDecoder().decode(view.slice(hPos, hPos+aLen)); } else if (aType === 4) { aLen = 16; const dv = new DataView(bufferData.slice(hPos, hPos+aLen)); targetAddr = Array.from({length:8}, (_,i) => dv.getUint16(i*2).toString(16)).join(":"); }
+        hPos += aLen; targetPort = new DataView(bufferData.slice(hPos, hPos+2)).getUint16(0); offset = hPos+4;
+      }
+      const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(targetAddr) || /^[a-zA-Z0-9-]+$/.test(targetAddr);
+      let connectAddr = targetAddr;
+      if (isDomain) { const dnsUrl = pickDnsFromPool(); try { const dohUrl = new URL(dnsUrl); dohUrl.searchParams.set("name", targetAddr); dohUrl.searchParams.set("type", "A"); const r = await fetch(dohUrl.toString(), { headers:{ accept:"application/dns-json" }, signal: AbortSignal.timeout(3000) }); const j = await r.json(); if (j.Answer && j.Answer.length > 0) connectAddr = j.Answer[0].data; } catch (e) {} }
+      try { remoteSocket = connect({ hostname:connectAddr, port:targetPort }); await remoteSocket.opened; }
+      catch {
+        let pips = getEffectivePips(activeProfile || {});
+        if (pips.length === 0 && sysConfig.backupRelay) pips = parseIpList(sysConfig.backupRelay);
+        let startIdx = 0;
+        if (pips.length > 1 && activeProfile) { let h = 0; for (let i = 0; i < activeProfile.id.length; i++) h = activeProfile.id.charCodeAt(i) + ((h << 5) - h); startIdx = Math.abs(h) % pips.length; }
+        let connected = false;
+        for (let a = 0; a < Math.min(pips.length, 3); a++) { const idx = (startIdx + a) % pips.length; try { const parts = pips[idx].split(":"); const host = parts[0]; const port = parts[1] ? Number(parts[1]) : targetPort; remoteSocket = connect({ hostname:host, port }); await remoteSocket.opened; connected = true; break; } catch (e) {} }
+        if (!connected) { safeWsClose(webSocket, 1011, "no-connect"); return isModeAlpha; }
+      }
+      dataWriter = remoteSocket.writable.getWriter();
+      if (offset < bufferData.byteLength) { try { await dataWriter.write(bufferData.slice(offset)); } catch (e) {} }
+      // FIX 1011: attach catch to pipeTo
+      try {
+        remoteSocket.readable.pipeTo(new WritableStream({
+          write(chunk) { if (!closed) safeWsSend(webSocket, chunk); },
+          close() { safeWsClose(webSocket, 1000, "done"); },
+          abort() { safeWsClose(webSocket, 1011, "abort"); }
+        })).catch(() => { safeWsClose(webSocket, 1000, "pipe"); });
+      } catch (e) { safeWsClose(webSocket, 1011, "pipe-setup"); }
+      return isModeAlpha;
+    } catch (e) {
+      safeWsClose(webSocket, 1011, "parse");
+      return false;
     }
-    const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(targetAddr) || /^[a-zA-Z0-9-]+$/.test(targetAddr);
-    let connectAddr = targetAddr;
-    if (isDomain) { const dnsUrl = pickDnsFromPool(); try { const dohUrl = new URL(dnsUrl); dohUrl.searchParams.set("name", targetAddr); dohUrl.searchParams.set("type", "A"); const r = await fetch(dohUrl.toString(), { headers:{ accept:"application/dns-json" }, signal: AbortSignal.timeout(3000) }); const j = await r.json(); if (j.Answer && j.Answer.length > 0) connectAddr = j.Answer[0].data; } catch (e) {} }
-    try { remoteSocket = connect({ hostname:connectAddr, port:targetPort }); await remoteSocket.opened; }
-    catch {
-      let pips = getEffectivePips(activeProfile || {});
-      if (pips.length === 0 && sysConfig.backupRelay) pips = parseIpList(sysConfig.backupRelay);
-      let startIdx = 0;
-      if (pips.length > 1 && activeProfile) { let h = 0; for (let i = 0; i < activeProfile.id.length; i++) h = activeProfile.id.charCodeAt(i) + ((h << 5) - h); startIdx = Math.abs(h) % pips.length; }
-      let connected = false;
-      for (let a = 0; a < Math.min(pips.length, 3); a++) { const idx = (startIdx + a) % pips.length; try { const [host, port] = pips[idx].split(":"); remoteSocket = connect({ hostname:host, port: port ? Number(port) : targetPort }); await remoteSocket.opened; connected = true; break; } catch (e) {} }
-      if (!connected) { webSocket.close(); return isModeAlpha; }
-    }
-    dataWriter = remoteSocket.writable.getWriter();
-    if (offset < bufferData.byteLength) await dataWriter.write(bufferData.slice(offset));
-    remoteSocket.readable.pipeTo(new WritableStream({ write(chunk) { webSocket.send(chunk); } }));
-    return isModeAlpha;
   }
 }
 
 /* ==================== HELPERS ==================== */
 function generateHardwareId(seed) { const h = Array.from(new TextEncoder().encode(seed)).map(b => b.toString(16).padStart(2,"0")).join("").slice(0,20).padEnd(20,"0"); return `${h.slice(0,8)}-0000-4000-8000-${h.slice(-12)}`; }
-function getTransportParams(port) { return ["80","8080","8880","2052","2082","2086","2095"].includes(port.toString()) ? "none" : "tls"; }
-function getSubscriptionStats(targetSub = null) { const hasMU = sysConfig.users && sysConfig.users.length > 0; let id = activeDeviceId, limitTotalReq = 0, expiryMs = 0; if (hasMU && targetSub) { const u = sysConfig.users.find(x => x.name.toLowerCase() === targetSub.toLowerCase() || x.id === targetSub); if (u) { id = u.id; limitTotalReq = u.limitTotalReq || 0; expiryMs = u.expiryMs || 0; } } const c = id.replace(/-/g,"").toLowerCase(); const s = sysUsageCache?.users?.[c] || { reqs:0 }; const tg = (s.reqs/6000).toFixed(2); const lg = limitTotalReq ? (limitTotalReq/6000).toFixed(2) : "Unlimited"; return { usedStr:`Used: ${tg} GB / ${lg} GB`, expiryStr:`Expiry` }; }
+function getTransportParams(port) { return CF_HTTP_PORTS.includes(port.toString()) ? "none" : "tls"; }
+function getSubscriptionStats(targetSub = null) { const hasMU = sysConfig.users && sysConfig.users.length > 0; let id = activeDeviceId, limitTotalReq = 0; if (hasMU && targetSub) { const u = sysConfig.users.find(x => x.name.toLowerCase() === targetSub.toLowerCase() || x.id === targetSub); if (u) { id = u.id; limitTotalReq = u.limitTotalReq || 0; } } const c = id.replace(/-/g,"").toLowerCase(); const s = sysUsageCache?.users?.[c] || { reqs:0 }; const tg = (s.reqs/6000).toFixed(2); const lg = limitTotalReq ? (limitTotalReq/6000).toFixed(2) : "Unlimited"; return { usedStr:`Used: ${tg} GB / ${lg} GB`, expiryStr:`Expiry` }; }
 function getFakeConfigNames(targetSub = null) { const stats = getSubscriptionStats(targetSub); return (sysConfig.fakeConfigs || []).filter(f => f && f.enabled && f.name).map(f => f.name.replace(/\{usage\}/g, stats.usedStr).replace(/\{expiry\}/g, stats.expiryStr)); }
 function getCleanIpsByRegion() { const regions = sysConfig.cleanIpRegions || []; const active = sysConfig.activeCleanRegions || []; const out = []; for (const id of active) { const r = regions.find(x => x.id === id); if (r && r.ips && r.ips.length > 0) out.push({ region:r, ips:r.ips }); } return out; }
 function getCleanIps(hostName, userCleanIps = null) { const raw = userCleanIps || sysConfig.cleanIps; let ips = parseIpList(raw); if (ips.length === 0) { const rg = getCleanIpsByRegion(); if (rg.length > 0) { const flat = []; rg.forEach(g => flat.push(...g.ips)); ips = flat; } } if (ips.length === 0 && sysConfig.autoCleanIpCache?.ips?.length > 0) ips = sysConfig.autoCleanIpCache.ips; if (ips.length === 0) ips = [hostName.endsWith(".pages.dev") ? sysConfig.metricNode : hostName]; return ips; }
@@ -2186,44 +2382,39 @@ function getProxyIpsArray(s) { if (!s) return []; return String(s).split(/[\r\n,
 function ipv4ToNat64(ipv4, prefix) { if (!prefix || !ipv4) return null; const p = ipv4.split("."); if (p.length !== 4) return null; const hex = p.map(x => parseInt(x).toString(16).padStart(2,"0")).join(""); const suffix = hex.match(/.{1,4}/g).join(":"); return prefix.replace(/\/\d+$/,"").replace(/:$/,"") + "::" + suffix; }
 function getProxyIpsWithNat64(s, nat64Prefix) { let ips = getProxyIpsArray(s); if (nat64Prefix) { const prefixes = String(nat64Prefix).split(/[\r\n,;]+/).map(x => x.trim()).filter(Boolean); const nat64Ips = []; prefixes.forEach(pre => { ips.forEach(ip => { if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) { const n = ipv4ToNat64(ip, pre); if (n) nat64Ips.push(n); } }); }); ips = ips.concat(nat64Ips); } return ips; }
 
-/* ═══════ Rich relay IP resolver — merges user relayIps + preset + global fallback ═══════ */
 function getEffectivePips(p) {
   const nat64 = getEffectiveNat64(p.nat64);
   let pips = [];
-  // Priority 1: per-user relayIps
   if (p.relayIps) pips = getProxyIpsWithNat64(p.relayIps, nat64);
-  // Priority 2: per-user proxyIp (legacy)
   if (pips.length === 0 && p.proxyIp) pips = getProxyIpsWithNat64(p.proxyIp, nat64);
-  // Priority 3: preset selected by user
   if (pips.length === 0 && p.relayPresetId) {
     const preset = (sysConfig.relayIpPresets || RELAY_IP_PRESETS).find(r => r.id === p.relayPresetId);
     if (preset && preset.ips?.length > 0) pips = getProxyIpsWithNat64(preset.ips.join("\n"), nat64);
   }
-  // Priority 4: global fallbacks
   if (pips.length === 0 && sysConfig.backupRelay) pips = getProxyIpsWithNat64(sysConfig.backupRelay, nat64);
   if (pips.length === 0 && sysConfig.customRelay) pips = getProxyIpsWithNat64(sysConfig.customRelay, nat64);
-  // Priority 5: auto preset (universal)
   if (pips.length === 0) {
     const autoPreset = (sysConfig.relayIpPresets || RELAY_IP_PRESETS).find(r => r.id === "auto");
     if (autoPreset && autoPreset.ips?.length > 0) pips = autoPreset.ips.slice();
   }
   return pips;
 }
-
 function getEffectiveNat64(userNat64) { const parts = []; if (userNat64) parts.push(...String(userNat64).split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean)); if (sysConfig.nat64Prefix) parts.push(...String(sysConfig.nat64Prefix).split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean)); else if (sysConfig.activeCarrier && CARRIERS[sysConfig.activeCarrier]) parts.push(CARRIERS[sysConfig.activeCarrier].nat64); return [...new Set(parts)].join(",") || null; }
 function getProfileHostNames(hostName, profile) { const primary = profile && profile.userPanelUrl ? profile.userPanelUrl : hostName; const names = []; if (profile && profile.userNodes && profile.userNodes.trim()) names.push(...profile.userNodes.split(/[\r\n,;]+/).map(s => linkedPanelHost(s.trim())).filter(Boolean)); else { names.push(linkedPanelHost(primary)); names.push(...getGlobalNodeHosts()); } return [...new Set(names)]; }
 function calcEffectiveIps(ips, maxCfg, mode, ports, pipsCount = 1) { if (!maxCfg) return ips; const protoCount = mode === "both" ? 2 : 1; const portCount = ports.length; const multiplier = protoCount * portCount * Math.max(1, pipsCount); const needed = Math.max(1, Math.floor(maxCfg / multiplier)); return ips.slice(0, needed); }
 
 const ipGeoCache = new Map();
 async function preloadIpFlags(profiles, hostNames) {
-  const uniqueIps = new Set();
-  profiles.forEach(p => { hostNames.forEach(h => { getCleanIps(h, p.cleanIp).forEach(ip => uniqueIps.add(ip)); }); if (p.proxyIp) getProxyIpsArray(p.proxyIp).forEach(ip => uniqueIps.add(ip)); });
-  const uncached = Array.from(uniqueIps).filter(ip => !ipGeoCache.has(ip));
-  for (let i = 0; i < uncached.length; i += 100) { const batch = uncached.slice(i, i+100); const queries = batch.map(ip => ({ query: ip.split(":")[0].replace(/[\[\]]/g,"").split("#")[0].trim(), fields:"status,country,countryCode,city,isp,org" })); try { const r = await fetch("http://ip-api.com/batch?fields=status,country,countryCode,city,isp,org", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(queries), signal: AbortSignal.timeout(5000) }); const results = await r.json(); batch.forEach((ip, idx) => { const d = results[idx]; if (d && d.status === "success") { const cp = d.countryCode.toUpperCase().split("").map(c => 127397 + c.charCodeAt()); ipGeoCache.set(ip, { flag: String.fromCodePoint(...cp), country:d.country||"Unknown", countryCode:d.countryCode||"", city:d.city||"", isp:d.isp||d.org||"" }); } else ipGeoCache.set(ip, { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }); }); } catch (e) { batch.forEach(ip => { if (!ipGeoCache.has(ip)) ipGeoCache.set(ip, { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }); }); } }
+  try {
+    const uniqueIps = new Set();
+    profiles.forEach(p => { hostNames.forEach(h => { getCleanIps(h, p.cleanIp).forEach(ip => uniqueIps.add(ip)); }); if (p.proxyIp) getProxyIpsArray(p.proxyIp).forEach(ip => uniqueIps.add(ip)); });
+    const uncached = Array.from(uniqueIps).filter(ip => !ipGeoCache.has(ip) && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip.split(":")[0]));
+    for (let i = 0; i < uncached.length; i += 100) { const batch = uncached.slice(i, i+100); const queries = batch.map(ip => ({ query: ip.split(":")[0].replace(/[\[\]]/g,"").split("#")[0].trim(), fields:"status,country,countryCode,city,isp,org" })); try { const r = await fetch("http://ip-api.com/batch?fields=status,country,countryCode,city,isp,org", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(queries), signal: AbortSignal.timeout(5000) }); const results = await r.json(); batch.forEach((ip, idx) => { const d = results[idx]; if (d && d.status === "success") { const cp = d.countryCode.toUpperCase().split("").map(c => 127397 + c.charCodeAt()); ipGeoCache.set(ip, { flag: String.fromCodePoint(...cp), country:d.country||"Unknown", countryCode:d.countryCode||"", city:d.city||"", isp:d.isp||d.org||"" }); } else ipGeoCache.set(ip, { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }); }); } catch (e) { batch.forEach(ip => { if (!ipGeoCache.has(ip)) ipGeoCache.set(ip, { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }); }); } }
+  } catch (e) {}
 }
 function getGeoInfo(ip) { if (!ip) return { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }; const clean = ip.split(":")[0].replace(/[\[\]]/g,"").split("#")[0].trim(); return ipGeoCache.get(ip) || ipGeoCache.get(clean) || { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }; }
 async function fetchIpGeoData(ip) { if (!ip) return null; try { const r = await fetch(`http://ip-api.com/json/${ip.split(":")[0].replace(/[\[\]]/g,"").split("#")[0].trim()}?fields=status,country,countryCode,city,isp,org`, { signal: AbortSignal.timeout(5000) }); const d = await r.json(); if (d && d.status === "success") { const cp = d.countryCode.toUpperCase().split("").map(c => 127397 + c.charCodeAt()); return { flag: String.fromCodePoint(...cp), country:d.country||"Unknown", countryCode:d.countryCode||"", city:d.city||"", isp:d.isp||d.org||"" }; } } catch (e) {} return null; }
-async function resolveUserProxyIpGeo(user) { const src = user.relayIps || user.proxyIp; if (!src) { user.proxyIpGeo = null; return; } const pips = getProxyIpsArray(src); if (pips.length === 0) { user.proxyIpGeo = null; return; } const geo = await fetchIpGeoData(pips[0]); user.proxyIpGeo = geo || { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }; }
+async function resolveUserProxyIpGeo(user) { try { const src = user.relayIps || user.proxyIp; if (!src) { user.proxyIpGeo = null; return; } const pips = getProxyIpsArray(src); if (pips.length === 0) { user.proxyIpGeo = null; return; } const geo = await fetchIpGeoData(pips[0]); user.proxyIpGeo = geo || { flag:"🌐", country:"Unknown", countryCode:"", city:"", isp:"" }; } catch (e) { user.proxyIpGeo = null; } }
 function getConfigName(type, profileName, port, hostName, ip, proxyIp = null, configIndex = 0, ipName = "", isDirect = false, regionInfo = null) {
   const prefix = sysConfig.namePrefix || "Hamed";
   const strategy = sysConfig.nameStrategy || "default";
@@ -2256,49 +2447,64 @@ function parseVlessUri(uri) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CONFIG BUILDERS — Relay-IP aware + multi-port support
+   CONFIG BUILDERS — v1.0.7 FIXED PORT LOGIC
+   Uses getEffectivePorts() which respects user > ISP-ports(if user has ISP) > global
    ═══════════════════════════════════════════════════════════════ */
 async function buildUriProfile(hostName, targetSub = null, allowInsecure = false) {
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
   const reqPath = encodeURI(`/${sysConfig.apiRoute}`);
   const fragValue = getActiveFragmentValue();
   const fragParam = fragValue ? `&fragment=${encodeURIComponent(fragValue)}` : "";
   const lines = [];
   const profiles = getAllProfiles(targetSub);
   const allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
-  await preloadIpFlags(profiles, allHostNames);
+  try { await preloadIpFlags(profiles, allHostNames); } catch (e) {}
   getFakeConfigNames(targetSub).forEach(name => { lines.push(`trojan://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?security=none#${encodeURIComponent(name)}`); });
   const _targetId = targetSub ? (sysConfig.users.find(u => u.name.toLowerCase() === targetSub.toLowerCase() || u.id === targetSub)?.id || activeDeviceId) : activeDeviceId;
   const extraEntries = getExtraInboundEntries(_targetId);
   extraEntries.filter(e => e.position !== "end").forEach(e => { const u = buildStaticInboundURI(e); if (u) lines.push(u); });
   profiles.forEach(p => {
-    const ispTemplate = applyIspTemplate(p, fragValue);
-    const pips = getEffectivePips(p);
-    const mode = p.userMode || sysConfig.mode;
-    const ePorts = p.userPorts ? parsePorts(p.userPorts) : (ispTemplate.ports ? parsePorts(ispTemplate.ports) : ports);
-    let configIndex = 0;
-    getProfileHostNames(hostName, p).forEach(hName => {
-      const entries = getCleanIpsWithNames(hName, p.cleanIp);
-      const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
-      const ipEntryMap = {}; entries.forEach(e => { ipEntryMap[e.ip] = e; });
-      ePorts.forEach(port => {
-        const sec = getTransportParams(port);
-        const ispFrag = ispTemplate.fragment ? `&fragment=${encodeURIComponent(ispTemplate.fragment)}` : fragParam;
-        let extBase = `encryption=none&security=${sec}&sni=${hName}&fp=${ispTemplate.agent || sysConfig.agent || "chrome"}&type=ws&host=${hName}&path=${reqPath}${ispFrag}`;
-        if (sysConfig.enableOpt2) extBase += `&pbk=enabled`;
-        extBase += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
-        ips.forEach(ip => {
-          const _pips = pips.length > 0 ? pips : [null];
-          _pips.forEach(sel => {
-            const ipEntry = ipEntryMap[ip] || {};
-            const regionInfo = ipEntry.regionId ? { id:ipEntry.regionId, name:ipEntry.regionName, flag:ipEntry.regionFlag } : null;
-            if (mode === "alpha" || mode === "both") { const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); lines.push(`${getAlpha()}://${cfgUuid}@${ip}:${port}?${extBase}#${encodeURIComponent(buildInboundName("alpha", p, ip, port, configIndex, hName, regionInfo, false))}`); }
-            if (mode === "beta" || mode === "both") { const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const payload = { junk, protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex }; const pathStr = "/" + btoa(JSON.stringify(payload)); let tb = `security=${sec}&sni=${hName}&fp=${ispTemplate.agent || sysConfig.agent || "chrome"}&type=ws&host=${hName}&path=${encodeURIComponent(pathStr)}${ispFrag}`; if (sysConfig.enableOpt2) tb += `&pbk=enabled`; tb += `&allowInsecure=${allowInsecure ? "1" : "0"}`; lines.push(`${getBeta()}://${p.id}@${ip}:${port}?${tb}#${encodeURIComponent(buildInboundName("beta", p, ip, port, configIndex, hName, regionInfo, false))}`); }
-            configIndex++;
+    try {
+      const ispTemplate = applyIspTemplate(p, fragValue);
+      const pips = getEffectivePips(p);
+      const mode = p.userMode || sysConfig.mode;
+      // FIX: use getEffectivePorts which returns global ports when ISP is default
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      let configIndex = 0;
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
+        const ipEntryMap = {}; entries.forEach(e => { ipEntryMap[e.ip] = e; });
+        ePorts.forEach(port => {
+          const sec = getTransportParams(port);
+          const ispFrag = ispTemplate.fragment ? `&fragment=${encodeURIComponent(ispTemplate.fragment)}` : fragParam;
+          let extBase = `encryption=none&security=${sec}&sni=${hName}&fp=${ispTemplate.agent || sysConfig.agent || "chrome"}&type=ws&host=${hName}&path=${reqPath}${ispFrag}`;
+          if (sysConfig.enableOpt2) extBase += `&pbk=enabled`;
+          extBase += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
+          ips.forEach(ip => {
+            const _pips = pips.length > 0 ? pips : [null];
+            _pips.forEach(sel => {
+              const ipEntry = ipEntryMap[ip] || {};
+              const regionInfo = ipEntry.regionId ? { id:ipEntry.regionId, name:ipEntry.regionName, flag:ipEntry.regionFlag } : null;
+              if (mode === "alpha" || mode === "both") {
+                const cfgUuid = generateConfigUuid(p.id, configIndex);
+                registerConfigEntry(cfgUuid, p.id, sel || "");
+                lines.push(`${getAlpha()}://${cfgUuid}@${ip}:${port}?${extBase}#${encodeURIComponent(buildInboundName("alpha", p, ip, port, configIndex, hName, regionInfo, false))}`);
+              }
+              if (mode === "beta" || mode === "both") {
+                const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join("");
+                const payload = { junk, protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex };
+                const pathStr = "/" + btoa(JSON.stringify(payload));
+                let tb = `security=${sec}&sni=${hName}&fp=${ispTemplate.agent || sysConfig.agent || "chrome"}&type=ws&host=${hName}&path=${encodeURIComponent(pathStr)}${ispFrag}`;
+                if (sysConfig.enableOpt2) tb += `&pbk=enabled`;
+                tb += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
+                lines.push(`${getBeta()}://${p.id}@${ip}:${port}?${tb}#${encodeURIComponent(buildInboundName("beta", p, ip, port, configIndex, hName, regionInfo, false))}`);
+              }
+              configIndex++;
+            });
           });
         });
       });
-    });
+    } catch (e) {}
   });
   const up = parseVlessUri(sysConfig.upstreamUri);
   if (up) lines.unshift(up.raw);
@@ -2307,38 +2513,39 @@ async function buildUriProfile(hostName, targetSub = null, allowInsecure = false
 }
 
 async function buildYamlProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
   const profiles = getAllProfiles(targetSub);
   const allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
-  await preloadIpFlags(profiles, allHostNames);
+  try { await preloadIpFlags(profiles, allHostNames); } catch (e) {}
   const proxies = [], proxyNames = [], proxyGeoInfo = new Map();
   const nameCounts = {};
   getFakeConfigNames(targetSub).forEach(name => { proxies.push(`- name: "${name}"\n  type: ${getBeta()}\n  server: 127.0.0.1\n  port: 80\n  password: "${activeDeviceId}"\n  udp: true\n  tls: false`); });
   const uniqueName = base => { if (!nameCounts[base]) { nameCounts[base] = 1; return base; } let c = nameCounts[base]; let n = `${base}-${c}`; while (nameCounts[n]) { c++; n = `${base}-${c}`; } nameCounts[base] = c+1; nameCounts[n] = 1; return n; };
   profiles.forEach(p => {
-    const ispTemplate = applyIspTemplate(p, "");
-    const pips = getEffectivePips(p);
-    const mode = p.userMode || sysConfig.mode;
-    const ePorts = p.userPorts ? parsePorts(p.userPorts) : (ispTemplate.ports ? parsePorts(ispTemplate.ports) : ports);
-    let configIndex = 0;
-    getProfileHostNames(hostName, p).forEach(hName => {
-      const entries = getCleanIpsWithNames(hName, p.cleanIp);
-      const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
-      const ipEntryMap = {}; entries.forEach(e => { ipEntryMap[e.ip] = e; });
-      ePorts.forEach(port => {
-        const sec = getTransportParams(port) === "tls" ? "true" : "false";
-        ips.forEach(ip => {
-          const _pips = pips.length > 0 ? pips : [null];
-          _pips.forEach(sel => {
-            const ipEntry = ipEntryMap[ip] || {};
-            const regionInfo = ipEntry.regionId ? { id:ipEntry.regionId, name:ipEntry.regionName, flag:ipEntry.regionFlag } : null;
-            if (mode === "alpha" || mode === "both") { let vName = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, regionInfo, false)); proxyNames.push(`"${vName}"`); proxyGeoInfo.set(vName, regionInfo ? { country:regionInfo.name, flag:regionInfo.flag } : getGeoInfo(sel || ip)); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"vl", mode:"proxyip", panelIPs:[] })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); proxies.push(`- name: "${vName.replace(/"/g, '""')}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${cfgUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${ispTemplate.agent || sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}`); }
-            if (mode === "beta" || mode === "both") { let tName = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, regionInfo, false)); proxyNames.push(`"${tName}"`); proxyGeoInfo.set(tName, regionInfo ? { country:regionInfo.name, flag:regionInfo.flag } : getGeoInfo(sel || ip)); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); proxies.push(`- name: "${tName.replace(/"/g, '""')}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${ispTemplate.agent || sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}`); }
-            configIndex++;
+    try {
+      const ispTemplate = applyIspTemplate(p, "");
+      const pips = getEffectivePips(p);
+      const mode = p.userMode || sysConfig.mode;
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      let configIndex = 0;
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
+        const ipEntryMap = {}; entries.forEach(e => { ipEntryMap[e.ip] = e; });
+        ePorts.forEach(port => {
+          const sec = getTransportParams(port) === "tls" ? "true" : "false";
+          ips.forEach(ip => {
+            const _pips = pips.length > 0 ? pips : [null];
+            _pips.forEach(sel => {
+              const ipEntry = ipEntryMap[ip] || {};
+              const regionInfo = ipEntry.regionId ? { id:ipEntry.regionId, name:ipEntry.regionName, flag:ipEntry.regionFlag } : null;
+              if (mode === "alpha" || mode === "both") { let vName = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, regionInfo, false)); proxyNames.push(`"${vName}"`); proxyGeoInfo.set(vName, regionInfo ? { country:regionInfo.name, flag:regionInfo.flag } : getGeoInfo(sel || ip)); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"vl", mode:"proxyip", panelIPs:[] })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); proxies.push(`- name: "${vName.replace(/"/g, '""')}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${cfgUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${ispTemplate.agent || sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}`); }
+              if (mode === "beta" || mode === "both") { let tName = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, regionInfo, false)); proxyNames.push(`"${tName}"`); proxyGeoInfo.set(tName, regionInfo ? { country:regionInfo.name, flag:regionInfo.flag } : getGeoInfo(sel || ip)); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); proxies.push(`- name: "${tName.replace(/"/g, '""')}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${ispTemplate.agent || sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}`); }
+              configIndex++;
+            });
           });
         });
       });
-    });
+    } catch (e) {}
   });
   const countryGroups = new Map();
   proxyGeoInfo.forEach((geo, name) => { const k = geo.country || "Unknown"; if (!countryGroups.has(k)) countryGroups.set(k, { flag: geo.flag || "🌐", proxies:[] }); countryGroups.get(k).proxies.push(name); });
@@ -2351,101 +2558,104 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
 }
 
 async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
   const profiles = getAllProfiles(targetSub);
   const allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
-  await preloadIpFlags(profiles, allHostNames);
+  try { await preloadIpFlags(profiles, allHostNames); } catch (e) {}
   const proxiesArr = [], dynamicTags = [];
   const uniqueName = base => { let c = 0, n = base; while (proxiesArr.some(p => p.name === n)) { c++; n = `${base}-${c}`; } return n; };
   profiles.forEach(p => {
-    const ispTemplate = applyIspTemplate(p, "");
-    const pips = getEffectivePips(p);
-    const mode = p.userMode || sysConfig.mode;
-    const ePorts = p.userPorts ? parsePorts(p.userPorts) : (ispTemplate.ports ? parsePorts(ispTemplate.ports) : ports);
-    let configIndex = 0;
-    getProfileHostNames(hostName, p).forEach(hName => {
-      const entries = getCleanIpsWithNames(hName, p.cleanIp);
-      const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
-      const ipEntryMap = {}; entries.forEach(e => { ipEntryMap[e.ip] = e; });
-      ePorts.forEach(port => {
-        const sec = getTransportParams(port) === "tls";
-        ips.forEach(ip => {
-          const _pips = pips.length > 0 ? pips : [null];
-          _pips.forEach(sel => {
-            const ipEntry = ipEntryMap[ip] || {};
-            const regionInfo = ipEntry.regionId ? { id:ipEntry.regionId, name:ipEntry.regionName, flag:ipEntry.regionFlag } : null;
-            if (mode === "alpha" || mode === "both") { const tag = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, regionInfo, false)); dynamicTags.push(tag); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"vl", mode:"proxyip", panelIPs:[] })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); proxiesArr.push({ name:tag, type:"vless", server:ip, port:parseInt(port), udp:true, uuid:cfgUuid, tls:sec, servername:hName, "client-fingerprint": ispTemplate.agent || "random", "skip-cert-verify":allowInsecure, network:"ws", "ws-opts":{ path:pathStr, headers:{ Host:hName } } }); }
-            if (mode === "beta" || mode === "both") { const tag = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, regionInfo, false)); dynamicTags.push(tag); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); proxiesArr.push({ name:tag, type:"trojan", server:ip, port:parseInt(port), udp:true, password:p.id, tls:sec, sni:hName, "client-fingerprint": ispTemplate.agent || "random", "skip-cert-verify":allowInsecure, network:"ws", "ws-opts":{ path:pathStr, headers:{ Host:hName } } }); }
-            configIndex++;
+    try {
+      const ispTemplate = applyIspTemplate(p, "");
+      const pips = getEffectivePips(p);
+      const mode = p.userMode || sysConfig.mode;
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      let configIndex = 0;
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
+        const ipEntryMap = {}; entries.forEach(e => { ipEntryMap[e.ip] = e; });
+        ePorts.forEach(port => {
+          const sec = getTransportParams(port) === "tls";
+          ips.forEach(ip => {
+            const _pips = pips.length > 0 ? pips : [null];
+            _pips.forEach(sel => {
+              const ipEntry = ipEntryMap[ip] || {};
+              const regionInfo = ipEntry.regionId ? { id:ipEntry.regionId, name:ipEntry.regionName, flag:ipEntry.regionFlag } : null;
+              if (mode === "alpha" || mode === "both") { const tag = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, regionInfo, false)); dynamicTags.push(tag); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"vl", mode:"proxyip", panelIPs:[] })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); proxiesArr.push({ name:tag, type:"vless", server:ip, port:parseInt(port), udp:true, uuid:cfgUuid, tls:sec, servername:hName, "client-fingerprint": ispTemplate.agent || "random", "skip-cert-verify":allowInsecure, network:"ws", "ws-opts":{ path:pathStr, headers:{ Host:hName } } }); }
+              if (mode === "beta" || mode === "both") { const tag = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, regionInfo, false)); dynamicTags.push(tag); const junk = Array.from({ length:11 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join(""); const pathStr = "/" + btoa(JSON.stringify({ junk, protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); proxiesArr.push({ name:tag, type:"trojan", server:ip, port:parseInt(port), udp:true, password:p.id, tls:sec, sni:hName, "client-fingerprint": ispTemplate.agent || "random", "skip-cert-verify":allowInsecure, network:"ws", "ws-opts":{ path:pathStr, headers:{ Host:hName } } }); }
+              configIndex++;
+            });
           });
         });
       });
-    });
+    } catch (e) {}
   });
   if (dynamicTags.length === 0) dynamicTags.push("direct");
   return { "mixed-port":7890, ipv6:true, "allow-lan":false, "log-level":"warning", mode:"rule", "tcp-concurrent":true, "proxies": proxiesArr, "proxy-groups":[ { name:"✅ Selector", type:"select", proxies:["⚡ Fastest", ...dynamicTags] }, { name:"⚡ Fastest", type:"url-test", url:"https://www.gstatic.com/generate_204", interval:30, proxies:dynamicTags } ], rules:["GEOIP,IR,DIRECT","MATCH,✅ Selector"] };
 }
 
 async function buildVJsonProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
   const profiles = getAllProfiles(targetSub);
   const allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
-  await preloadIpFlags(profiles, allHostNames);
+  try { await preloadIpFlags(profiles, allHostNames); } catch (e) {}
   const outbounds = [];
   const uniqueName = base => { let c = 0, n = base; while (outbounds.some(o => o.tag === n)) { c++; n = `${base}-${c}`; } return n; };
   let configIndex = 0;
   profiles.forEach(p => {
-    const ispTemplate = applyIspTemplate(p, "");
-    const pips = getEffectivePips(p);
-    const mode = p.userMode || sysConfig.mode;
-    const ePorts = p.userPorts ? parsePorts(p.userPorts) : (ispTemplate.ports ? parsePorts(ispTemplate.ports) : ports);
-    getProfileHostNames(hostName, p).forEach(hName => {
-      const entries = getCleanIpsWithNames(hName, p.cleanIp);
-      const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
-      ePorts.forEach(port => {
-        const sec = getTransportParams(port) === "tls" ? "tls" : "none";
-        ips.forEach(ip => {
-          const _pips = pips.length > 0 ? pips : [null];
-          _pips.forEach(sel => {
-            if (mode === "alpha" || mode === "both") { const tag = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, null, false)); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"vl", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); outbounds.push({ tag, protocol:"vless", settings:{ vnext:[{ address:ip, port:parseInt(port), users:[{ id:cfgUuid, encryption:"none" }] }] }, streamSettings:{ network:"ws", security:sec, tlsSettings: sec === "tls" ? { serverName:hName, allowInsecure } : undefined, wsSettings:{ path, headers:{ Host:hName } } } }); }
-            if (mode === "beta" || mode === "both") { const tag = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, null, false)); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); outbounds.push({ tag, protocol:"trojan", settings:{ servers:[{ address:ip, port:parseInt(port), password:p.id }] }, streamSettings:{ network:"ws", security:sec, tlsSettings: sec === "tls" ? { serverName:hName, allowInsecure } : undefined, wsSettings:{ path, headers:{ Host:hName } } } }); }
-            configIndex++;
+    try {
+      const ispTemplate = applyIspTemplate(p, "");
+      const pips = getEffectivePips(p);
+      const mode = p.userMode || sysConfig.mode;
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
+        ePorts.forEach(port => {
+          const sec = getTransportParams(port) === "tls" ? "tls" : "none";
+          ips.forEach(ip => {
+            const _pips = pips.length > 0 ? pips : [null];
+            _pips.forEach(sel => {
+              if (mode === "alpha" || mode === "both") { const tag = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, null, false)); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"vl", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); outbounds.push({ tag, protocol:"vless", settings:{ vnext:[{ address:ip, port:parseInt(port), users:[{ id:cfgUuid, encryption:"none" }] }] }, streamSettings:{ network:"ws", security:sec, tlsSettings: sec === "tls" ? { serverName:hName, allowInsecure } : undefined, wsSettings:{ path, headers:{ Host:hName } } } }); }
+              if (mode === "beta" || mode === "both") { const tag = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, null, false)); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); outbounds.push({ tag, protocol:"trojan", settings:{ servers:[{ address:ip, port:parseInt(port), password:p.id }] }, streamSettings:{ network:"ws", security:sec, tlsSettings: sec === "tls" ? { serverName:hName, allowInsecure } : undefined, wsSettings:{ path, headers:{ Host:hName } } } }); }
+              configIndex++;
+            });
           });
         });
       });
-    });
+    } catch (e) {}
   });
   return { outbounds };
 }
 
 async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
   const profiles = getAllProfiles(targetSub);
   const allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
-  await preloadIpFlags(profiles, allHostNames);
+  try { await preloadIpFlags(profiles, allHostNames); } catch (e) {}
   const outbounds = [];
   const uniqueName = base => { let c = 0, n = base; while (outbounds.some(o => o.tag === n)) { c++; n = `${base}-${c}`; } return n; };
   let configIndex = 0;
   profiles.forEach(p => {
-    const ispTemplate = applyIspTemplate(p, "");
-    const pips = getEffectivePips(p);
-    const mode = p.userMode || sysConfig.mode;
-    const ePorts = p.userPorts ? parsePorts(p.userPorts) : (ispTemplate.ports ? parsePorts(ispTemplate.ports) : ports);
-    getProfileHostNames(hostName, p).forEach(hName => {
-      const entries = getCleanIpsWithNames(hName, p.cleanIp);
-      const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
-      ePorts.forEach(port => {
-        const sec = getTransportParams(port) === "tls";
-        ips.forEach(ip => {
-          const _pips = pips.length > 0 ? pips : [null];
-          _pips.forEach(sel => {
-            if (mode === "alpha" || mode === "both") { const tag = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, null, false)); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"vl", mode:"proxyip", panelIPs:[] })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); outbounds.push({ type:"vless", tag, server:ip, server_port:parseInt(port), uuid:cfgUuid, network:"tcp", tls:{ enabled:sec, server_name:hName, insecure:allowInsecure, utls:{ enabled:true, fingerprint:"randomized" } }, transport:{ type:"ws", path, headers:{ Host:hName } } }); }
-            if (mode === "beta" || mode === "both") { const tag = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, null, false)); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); outbounds.push({ type:"trojan", tag, server:ip, server_port:parseInt(port), password:p.id, network:"tcp", tls:{ enabled:sec, server_name:hName, insecure:allowInsecure, utls:{ enabled:true, fingerprint:"randomized" } }, transport:{ type:"ws", path, headers:{ Host:hName } } }); }
-            configIndex++;
+    try {
+      const ispTemplate = applyIspTemplate(p, "");
+      const pips = getEffectivePips(p);
+      const mode = p.userMode || sysConfig.mode;
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, pips.length);
+        ePorts.forEach(port => {
+          const sec = getTransportParams(port) === "tls";
+          ips.forEach(ip => {
+            const _pips = pips.length > 0 ? pips : [null];
+            _pips.forEach(sel => {
+              if (mode === "alpha" || mode === "both") { const tag = uniqueName(buildInboundName("alpha", p, ip, port, configIndex, hName, null, false)); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"vl", mode:"proxyip", panelIPs:[] })); const cfgUuid = generateConfigUuid(p.id, configIndex); registerConfigEntry(cfgUuid, p.id, sel || ""); outbounds.push({ type:"vless", tag, server:ip, server_port:parseInt(port), uuid:cfgUuid, network:"tcp", tls:{ enabled:sec, server_name:hName, insecure:allowInsecure, utls:{ enabled:true, fingerprint:"randomized" } }, transport:{ type:"ws", path, headers:{ Host:hName } } }); }
+              if (mode === "beta" || mode === "both") { const tag = uniqueName(buildInboundName("beta", p, ip, port, configIndex, hName, null, false)); const path = "/" + btoa(JSON.stringify({ junk:"j", protocol:"tr", mode:"proxyip", panelIPs:[], relayIdx:configIndex })); outbounds.push({ type:"trojan", tag, server:ip, server_port:parseInt(port), password:p.id, network:"tcp", tls:{ enabled:sec, server_name:hName, insecure:allowInsecure, utls:{ enabled:true, fingerprint:"randomized" } }, transport:{ type:"ws", path, headers:{ Host:hName } } }); }
+              configIndex++;
+            });
           });
         });
       });
-    });
+    } catch (e) {}
   });
   return { log:{ disabled:false, level:"warn", timestamp:true }, dns:{ servers:[{ tag:"cf", address:"https://1.1.1.1/dns-query", detour:"direct" }], rules:[] }, inbounds:[{ type:"mixed", tag:"mixed-in", listen:"127.0.0.1", listen_port:2080 }], outbounds:[{ type:"direct", tag:"direct" }, ...outbounds], route:{ rules:[], final:"direct" } };
 }
@@ -2453,8 +2663,21 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
 async function buildSurgeProfile(hostName, targetSub = null, allowInsecure = false) {
   const lines = ["[Proxy]"];
   const profiles = getAllProfiles(targetSub);
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
-  profiles.forEach(p => { const mode = p.userMode || sysConfig.mode; getProfileHostNames(hostName, p).forEach(hName => { const entries = getCleanIpsWithNames(hName, p.cleanIp); const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ports, 1); ips.forEach(ip => { if (mode === "alpha" || mode === "both") { const cfgUuid = generateConfigUuid(p.id, 0); registerConfigEntry(cfgUuid, p.id, ""); lines.push(`${p.name}-V-${ip} = vless, ${ip}, ${ports[0]}, username=${cfgUuid}, tls=true, ws=true, ws-path=/${sysConfig.apiRoute}, ws-headers=Host:${hName}, sni=${hName}`); } if (mode === "beta" || mode === "both") lines.push(`${p.name}-T-${ip} = trojan, ${ip}, ${ports[0]}, password=${p.id}, tls=true, ws=true, ws-path=/${sysConfig.apiRoute}, ws-headers=Host:${hName}, sni=${hName}`); }); }); });
+  profiles.forEach(p => {
+    try {
+      const ispTemplate = applyIspTemplate(p, "");
+      const mode = p.userMode || sysConfig.mode;
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, 1);
+        ips.forEach(ip => { ePorts.forEach(port => {
+          if (mode === "alpha" || mode === "both") { const cfgUuid = generateConfigUuid(p.id, 0); registerConfigEntry(cfgUuid, p.id, ""); lines.push(`${p.name}-V-${ip}-${port} = vless, ${ip}, ${port}, username=${cfgUuid}, tls=true, ws=true, ws-path=/${sysConfig.apiRoute}, ws-headers=Host:${hName}, sni=${hName}`); }
+          if (mode === "beta" || mode === "both") lines.push(`${p.name}-T-${ip}-${port} = trojan, ${ip}, ${port}, password=${p.id}, tls=true, ws=true, ws-path=/${sysConfig.apiRoute}, ws-headers=Host:${hName}, sni=${hName}`);
+        }); });
+      });
+    } catch (e) {}
+  });
   lines.push("", "[Proxy Group]", "Proxy = select, " + profiles.map(p => p.name).join(", "));
   lines.push("", "[Rule]", "GEOIP,IR,DIRECT", "FINAL,Proxy");
   return lines.join("\n");
@@ -2462,8 +2685,21 @@ async function buildSurgeProfile(hostName, targetSub = null, allowInsecure = fal
 async function buildLoonProfile(hostName, targetSub = null, allowInsecure = false) {
   const lines = ["[Proxy]"];
   const profiles = getAllProfiles(targetSub);
-  const ports = parsePorts(sysConfig.socketPorts, ["443"]);
-  profiles.forEach(p => { const mode = p.userMode || sysConfig.mode; getProfileHostNames(hostName, p).forEach(hName => { const entries = getCleanIpsWithNames(hName, p.cleanIp); const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ports, 1); ips.forEach(ip => { if (mode === "alpha" || mode === "both") { const cfgUuid = generateConfigUuid(p.id, 0); registerConfigEntry(cfgUuid, p.id, ""); lines.push(`${p.name}-V-${ip} = vless,${ip},${ports[0]},"${cfgUuid}",over-tls=true,tls-name=${hName},transport=ws,path=/${sysConfig.apiRoute},host=${hName}`); } if (mode === "beta" || mode === "both") lines.push(`${p.name}-T-${ip} = trojan,${ip},${ports[0]},"${p.id}",over-tls=true,tls-name=${hName},transport=ws,path=/${sysConfig.apiRoute},host=${hName}`); }); }); });
+  profiles.forEach(p => {
+    try {
+      const ispTemplate = applyIspTemplate(p, "");
+      const mode = p.userMode || sysConfig.mode;
+      const ePorts = getEffectivePorts(p, ispTemplate);
+      getProfileHostNames(hostName, p).forEach(hName => {
+        const entries = getCleanIpsWithNames(hName, p.cleanIp);
+        const ips = calcEffectiveIps(entries.map(e => e.ip), p.maxConfigs||null, mode, ePorts, 1);
+        ips.forEach(ip => { ePorts.forEach(port => {
+          if (mode === "alpha" || mode === "both") { const cfgUuid = generateConfigUuid(p.id, 0); registerConfigEntry(cfgUuid, p.id, ""); lines.push(`${p.name}-V-${ip}-${port} = vless,${ip},${port},"${cfgUuid}",over-tls=true,tls-name=${hName},transport=ws,path=/${sysConfig.apiRoute},host=${hName}`); }
+          if (mode === "beta" || mode === "both") lines.push(`${p.name}-T-${ip}-${port} = trojan,${ip},${port},"${p.id}",over-tls=true,tls-name=${hName},transport=ws,path=/${sysConfig.apiRoute},host=${hName}`);
+        }); });
+      });
+    } catch (e) {}
+  });
   lines.push("", "[Proxy Group]", "Proxy = select, " + profiles.map(p => p.name).join(", "));
   lines.push("", "[Rule]", "GEOIP,CN,DIRECT", "FINAL,Proxy");
   return lines.join("\n");
@@ -2516,7 +2752,16 @@ async function loadSysConfig(env, ctx = null) {
             if (!loaded.inboundConfigs) loaded.inboundConfigs = JSON.parse(JSON.stringify(SYSTEM_DEFAULTS.inboundConfigs));
             if (!loaded.inboundConfigs.global) loaded.inboundConfigs.global = JSON.parse(JSON.stringify(SYSTEM_DEFAULTS.inboundConfigs.global));
             if (!loaded.inboundConfigs.global.prefix) loaded.inboundConfigs.global.prefix = "Hamed";
-            if (!loaded.relayIpPresets) loaded.relayIpPresets = RELAY_IP_PRESETS;
+            if (!loaded.relayIpPresets || !Array.isArray(loaded.relayIpPresets) || loaded.relayIpPresets.length === 0) loaded.relayIpPresets = RELAY_IP_PRESETS;
+            // v1.0.7 migration: reset legacy ISP template ports=443
+            if (loaded.ispTemplates) {
+              for (const k of Object.keys(loaded.ispTemplates)) {
+                if (loaded.ispTemplates[k] && loaded.ispTemplates[k].ports === "443") loaded.ispTemplates[k].ports = "";
+              }
+            }
+            // Ensure socketPorts is a valid string
+            if (Array.isArray(loaded.socketPorts)) loaded.socketPorts = loaded.socketPorts.join(",");
+            if (!loaded.socketPorts || !String(loaded.socketPorts).trim()) loaded.socketPorts = CF_HTTPS_PORTS.join(",");
             const dec = await decryptSensitiveInConfig(loaded, loaded.masterKey || "admin");
             sysConfig = { ...loaded, ...dec };
             sysConfigCacheTime = Date.now();
@@ -2593,42 +2838,45 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
   } catch (e) { return new Response("OK"); }
 }
 /* ═══════════════════════════════════════════════════════════════
-   DASHBOARD HTML — v1.0.6 Final
-   • Fixed hamburger icon
-   • iOS-optimized: reduced blur, GPU acceleration, no layout thrash
-   • Port list box, Relay IP selector with presets
+   DASHBOARD HTML — v1.0.7
+   • Otter watermark in background
+   • Smooth iOS performance
+   • New Port list box + better Relay UI
    ═══════════════════════════════════════════════════════════════ */
 const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">' +
 '<meta name="apple-mobile-web-app-capable" content="yes">' +
 '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">' +
-'<title>__PANEL_NAME__ · Design</title><meta name="theme-color" content="#05050a">' +
+'<title>__PANEL_NAME__ · v__CURRENT_VERSION__</title><meta name="theme-color" content="#05050a">' +
 '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ctext y=\'.9em\' font-size=\'90\'%3E%F0%9F%A6%A6%3C/text%3E%3C/svg%3E">' +
 '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
 '<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">' +
 '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>' +
 '<style>' +
-/* ═══ DESIGN TOKENS ═══ */
-':root{--bg-0:#05050a;--bg-1:#0a0a14;--surface:rgba(255,255,255,.03);--surface-hi:rgba(255,255,255,.06);--surface-max:rgba(255,255,255,.1);--border:rgba(255,255,255,.07);--border-hi:rgba(255,255,255,.14);--text-0:#f7f7fc;--text-1:#b4b4cc;--text-2:#7a7a95;--text-3:#4d4d66;--violet:#8b5cf6;--cyan:#06b6d4;--pink:#ec4899;--amber:#f59e0b;--emerald:#10b981;--rose:#f43f5e;--sky:#38bdf8;--ok:#10b981;--warn:#f59e0b;--danger:#ef4444;--info:#38bdf8;--grad:linear-gradient(135deg,#8b5cf6 0%,#d946ef 45%,#06b6d4 100%);--ease:cubic-bezier(.22,1,.36,1);--ease-out:cubic-bezier(.16,1,.3,1);--radius-sm:10px;--radius:14px;--radius-lg:20px;--radius-xl:26px;--radius-2xl:34px}' +
+/* ═══ TOKENS ═══ */
+':root{--bg-0:#05050a;--bg-1:#0a0a14;--surface:rgba(255,255,255,.03);--surface-hi:rgba(255,255,255,.06);--border:rgba(255,255,255,.07);--border-hi:rgba(255,255,255,.14);--text-0:#f7f7fc;--text-1:#b4b4cc;--text-2:#7a7a95;--text-3:#4d4d66;--violet:#8b5cf6;--cyan:#06b6d4;--pink:#ec4899;--amber:#f59e0b;--emerald:#10b981;--rose:#f43f5e;--sky:#38bdf8;--ok:#10b981;--warn:#f59e0b;--danger:#ef4444;--info:#38bdf8;--grad:linear-gradient(135deg,#8b5cf6 0%,#d946ef 45%,#06b6d4 100%);--grad-2:linear-gradient(135deg,#f59e0b 0%,#ec4899 100%);--ease:cubic-bezier(.22,1,.36,1);--ease-out:cubic-bezier(.16,1,.3,1);--radius-sm:10px;--radius:14px;--radius-lg:20px;--radius-xl:26px;--radius-2xl:34px}' +
 '*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}' +
 'html,body{height:100%;overscroll-behavior:none}' +
-'body{background:var(--bg-0);color:var(--text-0);font-family:\'Vazirmatn\',system-ui,-apple-system,"SF Pro",sans-serif;min-height:100vh;overflow-x:hidden;line-height:1.55;letter-spacing:-.005em;text-rendering:optimizeSpeed}' +
-/* ═══ iOS Performance: GPU acceleration + reduced blur ═══ */
-'.sb,.lcard,.gl,.sc,.cc,.md,.cmdk{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0);-webkit-transform:translateZ(0)}' +
-'.navigate,.tab,.btn{-webkit-user-select:none;user-select:none;touch-action:manipulation}' +
-'button,input,select,textarea{-webkit-appearance:none;appearance:none;font-family:inherit}' +
+'body{background:var(--bg-0);color:var(--text-0);font-family:\'Vazirmatn\',system-ui,-apple-system,"SF Pro",sans-serif;min-height:100vh;overflow-x:hidden;line-height:1.55;letter-spacing:-.005em}' +
+/* ═══ OTTER WATERMARK (background) ═══ */
+'.otter-bg{position:fixed;left:-8%;top:50%;transform:translateY(-50%);width:60vw;max-width:800px;aspect-ratio:1;z-index:-1;pointer-events:none;opacity:.035;filter:blur(.5px);animation:floatSlow 40s ease-in-out infinite}' +
+'@media(max-width:900px){.otter-bg{left:-30%;width:100vw;opacity:.025}}' +
+'@keyframes floatSlow{0%,100%{transform:translateY(-50%) rotate(0deg) scale(1)}50%{transform:translateY(-52%) rotate(3deg) scale(1.05)}}' +
+/* ═══ PERF ═══ */
+'.sb,.lcard,.gl,.sc,.cc,.md,.cmdk{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)}' +
+'.btn,.nv,.tab{-webkit-user-select:none;user-select:none;touch-action:manipulation}' +
 'input,select,textarea{transform:translateZ(0)}' +
-/* ═══ Ambience — light version for smooth scroll on iOS ═══ */
+/* ═══ BG MESH ═══ */
 '.bg-mesh{position:fixed;inset:0;z-index:-3;pointer-events:none;overflow:hidden;contain:strict}' +
-'.bg-mesh::before,.bg-mesh::after{content:"";position:absolute;border-radius:50%;filter:blur(100px);will-change:transform;transform:translateZ(0)}' +
-'.bg-mesh::before{width:700px;height:700px;top:-350px;right:-250px;background:radial-gradient(circle,rgba(139,92,246,.45),transparent 65%);opacity:.5;animation:meshA 26s ease-in-out infinite}' +
-'.bg-mesh::after{width:600px;height:600px;bottom:-280px;left:-200px;background:radial-gradient(circle,rgba(6,182,212,.35),transparent 65%);opacity:.45;animation:meshA 26s ease-in-out infinite;animation-delay:-13s}' +
-'@keyframes meshA{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(50px,-40px,0) scale(1.1)}}' +
-'.bg-grid{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(139,92,246,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,.035) 1px,transparent 1px);background-size:72px 72px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,black,transparent 85%);mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,black,transparent 85%)}' +
-'@media(prefers-reduced-motion:reduce){.bg-mesh::before,.bg-mesh::after,.brand::before,.otter::before{animation:none!important}}' +
+'.bg-mesh::before,.bg-mesh::after{content:"";position:absolute;border-radius:50%;filter:blur(110px);will-change:transform}' +
+'.bg-mesh::before{width:750px;height:750px;top:-380px;right:-280px;background:radial-gradient(circle,rgba(139,92,246,.4),transparent 65%);opacity:.55;animation:meshA 28s ease-in-out infinite}' +
+'.bg-mesh::after{width:650px;height:650px;bottom:-300px;left:-220px;background:radial-gradient(circle,rgba(6,182,212,.32),transparent 65%);opacity:.45;animation:meshA 28s ease-in-out infinite;animation-delay:-14s}' +
+'@keyframes meshA{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(55px,-45px,0) scale(1.1)}}' +
+'.bg-grid{position:fixed;inset:0;z-index:-2;pointer-events:none;background-image:linear-gradient(rgba(139,92,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,.03) 1px,transparent 1px);background-size:72px 72px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,black,transparent 85%);mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,black,transparent 85%)}' +
+'@media(prefers-reduced-motion:reduce){.otter-bg,.bg-mesh::before,.bg-mesh::after{animation:none!important}}' +
 '::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(139,92,246,.3);border-radius:8px}' +
 '::selection{background:rgba(139,92,246,.5);color:#fff}' +
-/* ═══ Icons ═══ */
+/* ═══ ICON ═══ */
 '.icn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;line-height:0}' +
 '.icn svg{display:block;width:1em;height:1em;stroke-width:1.85;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}' +
 /* ═══ LOGIN ═══ */
@@ -2663,7 +2911,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.lfoot{margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.06);text-align:center;font-size:11px;color:var(--text-3);letter-spacing:.5px;line-height:1.8}' +
 '.lfoot strong{color:var(--violet)}' +
 '.lerror{display:none;padding:12px 14px;border-radius:var(--radius);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;font-size:13px;margin-bottom:14px;text-align:center;font-weight:600}' +
-/* ═══ SHELL / SIDEBAR ═══ */
+/* ═══ SHELL ═══ */
 '.shell{display:none;min-height:100vh}.shell.on{display:block}' +
 '.sb{position:fixed;top:12px;right:12px;bottom:12px;width:280px;background:linear-gradient(180deg,rgba(18,18,32,.96),rgba(10,10,20,.98));border:1px solid var(--border-hi);border-radius:var(--radius-xl);padding:18px 14px;z-index:50;overflow-y:auto;transition:transform .35s var(--ease);box-shadow:0 30px 80px -30px rgba(0,0,0,.9);-webkit-overflow-scrolling:touch}' +
 '.sb::-webkit-scrollbar{width:3px}' +
@@ -2686,15 +2934,14 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.logout-btn:hover{border-color:rgba(244,63,94,.5);color:#fff;background:rgba(244,63,94,.15)}' +
 '.logout-btn:active{transform:scale(.97)}' +
 '.logout-btn .lo-dot{width:7px;height:7px;border-radius:50%;background:#f43f5e;box-shadow:0 0 10px #f43f5e;animation:pulseDot 1.8s infinite}' +
-'.mc{margin-right:308px;padding:28px 28px 40px;min-height:100vh;transition:margin .35s var(--ease);max-width:1600px}' +
-'@media(max-width:1100px){.mc{margin-right:0;padding:76px 14px 24px}.sb{transform:translateX(calc(100% + 24px));will-change:transform}.sb.on{transform:translateX(0)}}' +
-/* ═══ HAMBURGER — FIXED: explicit large SVG, no CSS dependency ═══ */
+'.mc{margin-right:308px;padding:28px 28px 40px;min-height:100vh;transition:margin .35s var(--ease);max-width:1600px;position:relative;z-index:1}' +
+'@media(max-width:1100px){.mc{margin-right:0;padding:76px 14px 24px}.sb{transform:translateX(calc(100% + 24px))}.sb.on{transform:translateX(0)}}' +
 '.mm{display:none;position:fixed;top:16px;right:16px;z-index:60;width:48px;height:48px;border-radius:var(--radius);background:rgba(20,20,35,.95);border:1px solid var(--border-hi);align-items:center;justify-content:center;cursor:pointer;color:var(--text-0);box-shadow:0 12px 30px -10px rgba(0,0,0,.7);transition:transform .15s,background .2s}' +
 '.mm:active{transform:scale(.94);background:rgba(139,92,246,.25)}' +
 '.mm svg{width:22px;height:22px;stroke-width:2.2;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}' +
 '@media(max-width:1100px){.mm{display:flex}}' +
 '.ov{position:fixed;inset:0;background:rgba(5,5,10,.65);z-index:40;opacity:0;pointer-events:none;transition:opacity .25s}.ov.on{opacity:1;pointer-events:auto}' +
-/* ═══ PAGE HEADER ═══ */
+/* ═══ HEADER ═══ */
 '.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:14px}' +
 '.ph-titles{flex:1;min-width:200px}' +
 '.pt{font-size:24px;font-weight:900;letter-spacing:-.5px;display:flex;align-items:center;gap:11px;line-height:1.2}' +
@@ -2703,7 +2950,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.ps{color:var(--text-2);font-size:12.5px;margin-top:6px;font-weight:500}' +
 '.ph-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}' +
 /* ═══ BUTTONS ═══ */
-'.btn{padding:10px 15px;border-radius:12px;font-weight:700;font-size:12.5px;cursor:pointer;border:none;transition:transform .12s,background .18s,border-color .18s;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;user-select:none;letter-spacing:.15px;position:relative}' +
+'.btn{padding:10px 15px;border-radius:12px;font-weight:700;font-size:12.5px;cursor:pointer;border:none;transition:transform .12s,background .18s,border-color .18s;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;user-select:none}' +
 '.btn .icn{font-size:14px}' +
 '.btn:active{transform:scale(.96)}' +
 '.btn:disabled{opacity:.5;cursor:not-allowed}' +
@@ -2720,7 +2967,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.gl{background:linear-gradient(165deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}' +
 '.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}' +
 '.sc{padding:18px;border-radius:var(--radius-lg);background:linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--border);position:relative;overflow:hidden;transition:border-color .25s,transform .25s}' +
-'.sc:hover{border-color:rgba(139,92,246,.35)}' +
+'.sc:hover{border-color:rgba(139,92,246,.35);transform:translateY(-2px)}' +
 '.sc::after{content:"";position:absolute;top:-50px;right:-50px;width:120px;height:120px;background:radial-gradient(circle,rgba(139,92,246,.22),transparent 70%);pointer-events:none}' +
 '.sl{font-size:10.5px;color:var(--text-2);font-weight:700;letter-spacing:.4px;display:flex;align-items:center;gap:7px;margin-bottom:10px}' +
 '.sl .icn{font-size:13px;color:var(--violet)}' +
@@ -2762,18 +3009,24 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.fd textarea{resize:vertical;min-height:80px;font-family:\'JetBrains Mono\',monospace}' +
 '.stt{font-size:15.5px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}' +
 '.stt .icn{font-size:17px;color:var(--violet)}' +
-/* ═══ LIST BOX (for ports and IPs) ═══ */
+/* ═══ LIST BOX ═══ */
 '.list-box{display:flex;flex-wrap:wrap;gap:8px;padding:12px;border-radius:var(--radius);background:rgba(10,10,20,.5);border:1px solid var(--border);min-height:56px}' +
-'.list-item{display:inline-flex;align-items:center;gap:6px;padding:6px 10px 6px 12px;border-radius:10px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.28);color:#c7d2fe;font-size:12px;font-weight:700;font-family:\'JetBrains Mono\',monospace}' +
-'.list-item .x{cursor:pointer;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);font-size:11px;line-height:1;color:#fda4af;transition:background .15s}' +
+'.list-box:empty::before{content:"خالی";color:var(--text-3);font-size:12px}' +
+'.list-item{display:inline-flex;align-items:center;gap:6px;padding:6px 10px 6px 12px;border-radius:10px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.28);color:#c7d2fe;font-size:12px;font-weight:700;font-family:\'JetBrains Mono\',monospace;transition:all .18s}' +
+'.list-item:hover{border-color:rgba(139,92,246,.5)}' +
+'.list-item .x{cursor:pointer;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);font-size:11px;line-height:1;color:#fda4af;transition:background .15s;user-select:none}' +
 '.list-item .x:hover{background:rgba(244,63,94,.4);color:#fff}' +
+'.list-item.port{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.28);color:#67e8f9}' +
 '.list-add{display:flex;gap:8px;margin-top:10px}' +
 '.list-add input{flex:1}' +
-/* ═══ Relay IP preset grid ═══ */
-'.relay-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:280px;overflow-y:auto;padding:6px;-webkit-overflow-scrolling:touch}' +
+'.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}' +
+'.chip-sm{padding:5px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text-2);font-size:10.5px;font-weight:700;cursor:pointer;transition:all .15s;font-family:\'JetBrains Mono\',monospace}' +
+'.chip-sm:hover{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.4);color:#fff}' +
+/* ═══ RELAY ═══ */
+'.relay-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:300px;overflow-y:auto;padding:6px;-webkit-overflow-scrolling:touch}' +
 '.relay-card{padding:12px;border-radius:12px;background:rgba(10,10,20,.5);border:1px solid var(--border);cursor:pointer;transition:all .2s;text-align:center;font-size:12px}' +
 '.relay-card:hover{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.08)}' +
-'.relay-card.on{border-color:rgba(6,182,212,.55);background:rgba(6,182,212,.12)}' +
+'.relay-card.on{border-color:rgba(6,182,212,.55);background:rgba(6,182,212,.12);box-shadow:0 6px 20px -8px rgba(6,182,212,.7)}' +
 '.relay-card .flag{font-size:26px;display:block;margin-bottom:6px}' +
 '.relay-card .name{font-weight:800;font-size:11.5px}' +
 '.relay-card .count{font-size:9.5px;color:var(--text-2);margin-top:2px}' +
@@ -2802,7 +3055,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.tag-mini{display:inline-block;padding:2.5px 8px;border-radius:7px;background:rgba(139,92,246,.15);color:#c7d2fe;font-size:9.5px;font-weight:800;margin-left:4px}' +
 '.card2{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}' +
 '.node-card{padding:16px;border-radius:var(--radius-lg);background:linear-gradient(165deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--border);transition:border-color .22s,transform .22s}' +
-'.node-card:hover{border-color:rgba(139,92,246,.4)}' +
+'.node-card:hover{border-color:rgba(139,92,246,.4);transform:translateY(-2px)}' +
 '.empty{padding:44px 24px;text-align:center;color:var(--text-2);font-size:13px;font-weight:500}' +
 '.empty .icn{font-size:36px;display:block;margin:0 auto 12px;color:var(--text-3);opacity:.7}' +
 '.pill{padding:8px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}' +
@@ -2821,14 +3074,17 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.latency-bar{height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:8px}' +
 '.latency-bar>div{height:100%;border-radius:4px;transition:width .7s var(--ease)}' +
 '.tag-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.28);color:#c7d2fe;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}' +
-'.tag-chip:hover{background:rgba(139,92,246,.2)}' +
+'.tag-chip:hover{background:rgba(139,92,246,.2);transform:translateY(-1px)}' +
 '.entry-row{display:flex;gap:10px;align-items:center;padding:12px;border-radius:var(--radius);background:rgba(10,10,20,.5);border:1px solid var(--border);margin-bottom:8px}' +
 '.entry-row .txt{flex:1;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text-1)}' +
 '.preview-box{padding:16px;border-radius:var(--radius);background:rgba(139,92,246,.06);border:1px dashed rgba(139,92,246,.35);font-family:\'JetBrains Mono\',monospace;font-size:13px;color:#c7d2fe;text-align:center;word-break:break-word;font-weight:600}' +
 '.search-input{width:100%;max-width:340px;padding:12px 15px;border-radius:var(--radius);background:rgba(10,10,20,.6);border:1px solid var(--border);color:var(--text-0);font-size:13px;font-weight:500;outline:none;transition:border-color .2s}' +
 '.search-input:focus{border-color:rgba(139,92,246,.6)}' +
+'.bulk-bar{padding:10px 14px;margin-bottom:10px;border-radius:12px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;font-weight:700}' +
 '@media(max-width:600px){.md{padding:20px;border-radius:20px}.mm{top:14px;right:14px}.pt .icn{font-size:18px}}' +
 '</style></head><body>' +
+/* ═══ OTTER WATERMARK ═══ */
+'<div class="otter-bg">__OTTER_SVG__</div>' +
 '<div class="bg-mesh"></div><div class="bg-grid"></div>' +
 /* ═══ LOGIN ═══ */
 '<div id="login" class="login"><div class="lcard">' +
@@ -2844,7 +3100,6 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '</div></div>' +
 '<div id="shell" class="shell">' +
 '<div class="ov" id="ov" onclick="tg()"></div>' +
-/* ═══ HAMBURGER — Fixed with inline SVG (no dependency on setIcon) ═══ */
 '<button class="mm" id="menuBtn" onclick="tg()" aria-label="Menu">' +
 '<svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>' +
 '</button>' +
@@ -2878,15 +3133,16 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div id="tab-weather" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-weather-i"></span> وضعیت شبکه</h1><p class="ps">Network Weather</p></div><div class="ph-actions"><button class="btn btn-g btn-s" onclick="lweather()" id="wrefBtn"></button></div></div>' +
 '<div id="weatherBox" class="gl" style="padding:22px"><div class="empty"><span class="icn" id="i-loadw"></span>در حال بارگذاری...</div></div></div>' +
 '<div id="tab-users" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-users-i"></span> کاربران</h1><p class="ps">مدیریت مشترکین</p></div><div class="ph-actions"><button class="btn btn-g btn-s" onclick="exportCsv()" id="expBtn"></button><button class="btn btn-g btn-s" onclick="openImport()" id="impBtn"></button><button class="btn btn-p btn-s" onclick="ou()" id="addUserBtn"></button></div></div>' +
-'<div style="margin-bottom:12px"><input id="userSearch" class="search-input" placeholder="جستجوی کاربر..." oninput="ru()"></div>' +
-'<div class="tw"><table><thead><tr><th>نام</th><th>وضعیت</th><th>مصرف</th><th>انقضا</th><th style="text-align:left">عملیات</th></tr></thead><tbody id="ub"><tr><td colspan="5" class="empty">بارگذاری...</td></tr></tbody></table></div></div>' +
+'<div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="userSearch" class="search-input" placeholder="جستجوی کاربر..." oninput="ru()"><select id="groupFilter" class="search-input" style="max-width:150px" onchange="ru()"><option value="">همه گروه‌ها</option></select></div>' +
+'<div id="bulkBar" class="bulk-bar" style="display:none"><span id="bulkCount">0</span> انتخاب شده<button class="btn btn-p btn-s" onclick="bulkAction(\'pause\')">توقف</button><button class="btn btn-g btn-s" onclick="bulkAction(\'resume\')">فعال</button><button class="btn btn-g btn-s" onclick="bulkReset()">ریست مصرف</button><button class="btn btn-d btn-s" onclick="bulkClear()">لغو</button></div>' +
+'<div class="tw"><table><thead><tr><th style="width:32px"><input type="checkbox" id="selectAllUsers" onchange="toggleSelectAll(this.checked)"></th><th>نام</th><th>وضعیت</th><th>مصرف</th><th>انقضا</th><th style="text-align:left">عملیات</th></tr></thead><tbody id="ub"><tr><td colspan="6" class="empty">بارگذاری...</td></tr></tbody></table></div></div>' +
 '<div id="tab-groups" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-groups-i"></span> گروه‌ها</h1><p class="ps">پلن‌های پیش‌فرض</p></div><div class="ph-actions"><button class="btn btn-p btn-s" onclick="og()" id="addGroupBtn"></button></div></div>' +
 '<div id="groupsGrid" class="card2"></div></div>' +
 '<div id="tab-traffic" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-traffic-i"></span> ترافیک</h1><p class="ps">تحلیل دقیق</p></div></div>' +
 '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><div class="pill on" onclick="setDays(7,this)">۷ روز</div><div class="pill" onclick="setDays(14,this)">۱۴ روز</div><div class="pill" onclick="setDays(30,this)">۳۰ روز</div></div>' +
 '<div class="cc" style="margin-bottom:14px"><div class="ct"><span class="icn" id="i-chart3-i"></span> مصرف کل (GB)</div><div class="cw" style="height:290px"><canvas id="ch3"></canvas></div></div>' +
 '<div class="cc" style="margin-bottom:14px"><div class="ct"><span class="icn" id="i-chart4-i"></span> مقایسه کاربران</div><div class="cw" style="height:320px"><canvas id="ch4"></canvas></div></div>' +
-'<div class="cc"><div class="ct"><span class="icn" id="i-chart5-i"></span> مقایسه دوره‌ای</div><div class="fr" style="margin-bottom:12px"><div class="fd"><label>ID کاربران (با کاما)</label><input id="cmpIds" placeholder="u_abc,u_def"></div><div class="fd"><label>تعداد روز</label><input id="cmpDays" type="number" value="14"></div></div><button class="btn btn-p btn-s" onclick="runCompare()">مقایسه</button><div class="cw" style="height:290px;margin-top:12px"><canvas id="ch5"></canvas></div></div></div>' +
+'<div class="cc"><div class="ct"><span class="icn" id="i-chart5-i"></span> مقایسه دوره‌ای</div><div class="fr" style="margin-bottom:12px"><div class="fd"><label>ID کاربران</label><input id="cmpIds" placeholder="u_abc,u_def"></div><div class="fd"><label>روز</label><input id="cmpDays" type="number" value="14"></div></div><button class="btn btn-p btn-s" onclick="runCompare()">مقایسه</button><div class="cw" style="height:290px;margin-top:12px"><canvas id="ch5"></canvas></div></div></div>' +
 '<div id="tab-anomalies" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-anom-i"></span> هشدارها</h1><p class="ps">مصرف غیرعادی</p></div><div class="ph-actions"><button class="btn btn-g btn-s" onclick="lanom()" id="anomRefBtn"></button></div></div>' +
 '<div id="anomList" class="gl" style="padding:16px"><div class="empty">در حال بررسی...</div></div></div>' +
 '<div id="tab-predictive" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-pred-i"></span> پیش‌بینی</h1><p class="ps">Predictive Analytics</p></div><div class="ph-actions"><button class="btn btn-g btn-s" onclick="lpredictive()" id="predRefBtn"></button></div></div>' +
@@ -2897,16 +3153,14 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div id="tab-inbounds" class="tp">' +
 '<div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-inb-i"></span> اینباند کانفیگ‌ها</h1><p class="ps">تنظیم نام و ورودی‌های کانفیگ‌ها</p></div><div class="ph-actions"><button class="btn btn-p btn-s" onclick="saveInboundGlobal()" id="saveInbBtn"></button></div></div>' +
 '<div class="gl" style="padding:20px;margin-bottom:14px"><div class="stt"><span class="icn" id="i-inb1"></span> تنظیمات سراسری</div>' +
-'<div class="fg">' +
-'<div class="fr"><div class="fd"><label>الگوی نام‌گذاری</label><input id="inb-template" placeholder="{FLAG} {PREFIX}-{INDEX}"></div><div class="fd"><label>پیشوند</label><input id="inb-prefix" placeholder="Hamed"></div></div>' +
-'<div class="fr"><div class="fd"><label>حداکثر طول نام</label><input id="inb-maxlen" type="number" value="60"></div><div class="fd"><label>فقط کاراکترهای ASCII</label><div style="padding-top:10px"><label class="switch"><input id="inb-ascii" type="checkbox"><span class="sl2"></span></label></div></div></div>' +
+'<div class="fg"><div class="fr"><div class="fd"><label>الگوی نام</label><input id="inb-template" placeholder="{FLAG} {PREFIX}-{INDEX}"></div><div class="fd"><label>پیشوند</label><input id="inb-prefix" placeholder="Hamed"></div></div>' +
+'<div class="fr"><div class="fd"><label>حداکثر طول نام</label><input id="inb-maxlen" type="number" value="60"></div><div class="fd"><label>فقط ASCII</label><div style="padding-top:10px"><label class="switch"><input id="inb-ascii" type="checkbox"><span class="sl2"></span></label></div></div></div>' +
 '<div class="fd"><label>پیش‌نمایش</label><div class="preview-box" id="inb-preview">🇩🇪 Hamed-1</div></div>' +
-'<div class="fd"><label>تگ‌های موجود (کلیک کنید)</label><div id="inb-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div></div>' +
+'<div class="fd"><label>تگ‌های موجود</label><div id="inb-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div></div>' +
 '</div>' +
 '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-p" onclick="saveInboundGlobal()" id="inbSaveBtn"></button><button class="btn btn-g" onclick="previewInbound()">پیش‌نمایش</button><button class="btn btn-d" onclick="applyGlobalToAll()">اعمال به همه</button></div>' +
 '</div>' +
 '<div class="gl" style="padding:20px;margin-bottom:14px"><div class="stt"><span class="icn" id="i-inb2"></span> ورودی‌های استاتیک</div>' +
-'<div style="font-size:12px;color:var(--text-2);margin-bottom:12px">این متن‌ها به‌عنوان کانفیگ اضافی در ابتدا یا انتهای لینک اشتراک اضافه می‌شوند.</div>' +
 '<div id="entriesList"></div>' +
 '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
 '<input id="newEntryText" class="search-input" placeholder="متن (مثلاً THIS PANEL MADE BY HAMED TEAM)" style="flex:2;min-width:180px;max-width:none">' +
@@ -2954,15 +3208,14 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div id="latencyGrid" class="fg"></div></div>' +
 '<div id="tab-dpi" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-dpi-i"></span> DPI Detection</h1></div><div class="ph-actions"><button class="btn btn-p btn-s" onclick="runDpi()" id="dpiBtn"></button></div></div>' +
 '<div id="dpiBox" class="gl" style="padding:22px"><div class="empty">برای بررسی کلیک کنید</div></div></div>' +
-/* ═══ SETTINGS — with PORT LIST BOX ═══ */
+/* ═══ SETTINGS with Port List Box ═══ */
 '<div id="tab-settings" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-set-i"></span> تنظیمات</h1><p class="ps">پیکربندی اصلی</p></div></div>' +
 '<div class="gl" style="padding:22px"><div class="stt"><span class="icn" id="i-set1"></span> پیکربندی</div><div class="fg">' +
 '<div class="fr"><div class="fd"><label>نام پنل</label><input id="c1"></div><div class="fd"><label>مسیر API</label><input id="c2" disabled></div></div>' +
 '<div class="fr"><div class="fd"><label>کلید اصلی</label><input id="c3" type="password"></div><div class="fd"><label>پروتکل</label><select id="c4"><option value="alpha">Alpha (VLESS)</option><option value="beta">Beta (Trojan)</option><option value="both">Both</option></select></div></div>' +
-/* Port list box — replaces the plain text input */
 '<div class="fd"><label><span class="icn" id="i-ports"></span> پورت‌های کانفیگ (لیست باز Cloudflare)</label>' +
 '<div class="list-box" id="portsListBox"></div>' +
-'<div class="list-add"><input id="newPortInput" class="search-input" placeholder="پورت جدید مثلاً 2053" style="max-width:none" inputmode="numeric"><button class="btn btn-p btn-s" onclick="addPort()">افزودن</button><button class="btn btn-g btn-s" onclick="loadPresetPorts()">Preset</button></div>' +
+'<div class="list-add"><input id="newPortInput" class="search-input" placeholder="پورت جدید مثلاً 2053" style="max-width:none" inputmode="numeric"><button class="btn btn-p btn-s" onclick="addPort()">افزودن</button><button class="btn btn-g btn-s" onclick="loadPresetPorts()">HTTPS</button><button class="btn btn-g btn-s" onclick="loadAllPorts()">همه</button></div>' +
 '<div style="font-size:11px;color:var(--text-2);margin-top:8px;line-height:1.6">پورت‌های معتبر کلادفلر: <span class="mono">443 · 8443 · 2053 · 2083 · 2087 · 2096 · 80 · 8080 · 8880 · 2052 · 2082 · 2086 · 2095</span></div>' +
 '</div>' +
 '<div class="fd"><label>DNS</label><input id="c6"></div>' +
@@ -2975,7 +3228,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div id="tab-advanced" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-adv-i"></span> تنظیمات پیشرفته</h1></div></div>' +
 '<div class="gl" style="padding:22px;display:grid;gap:20px">' +
 '<div><div class="stt"><span class="icn" id="i-adv1"></span> بهینه‌سازی ایران</div><div class="fg">' +
-'<div class="fr"><div class="fd"><label>اپراتور پیش‌فرض</label><select id="a9"><option value="">هیچ</option><option value="mci">همراه اول</option><option value="irancell">ایرانسل</option><option value="rightel">رایتل</option><option value="mokhaberat">مخابرات</option></select></div>' +
+'<div class="fr"><div class="fd"><label>اپراتور پیش‌فرض</label><select id="a9"><option value="">هیچ</option><option value="mci">همراه اول</option><option value="irancell">ایرانسل</option><option value="rightel">رایتل</option><option value="mokhaberat">مخابرات</option><option value="shatel">شاتل</option></select></div>' +
 '<div class="fd"><label>Fragment Preset</label><select id="a10"></select></div></div>' +
 '<div class="fd"><label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="a11" style="width:auto"> مسیردهی دامنه‌های ایرانی</label></div>' +
 '</div></div>' +
@@ -2987,7 +3240,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div class="fr"><div class="fd"><label>Bot Token</label><input id="a4" type="password"></div><div class="fd"><label>Chat ID</label><input id="a5"></div></div>' +
 '<div class="fd"><label>Admin ID</label><input id="a6"></div>' +
 '</div></div>' +
-'<div><div class="stt"><span class="icn" id="i-adv4"></span> رله پیش‌فرض (Backup Relay)</div><div class="fg">' +
+'<div><div class="stt"><span class="icn" id="i-adv4"></span> رله پیش‌فرض</div><div class="fg">' +
 '<div class="fd"><label>آی‌پی/دامنه رله (خط‌به‌خط)</label><textarea id="a7" rows="3" placeholder="ProxyIP.CMLiussss.net&#10;188.114.96.1"></textarea></div>' +
 '<div class="fd"><label>NAT64 Prefix</label><input id="a8" placeholder="2a00:1a00:1::/96"></div>' +
 '</div></div>' +
@@ -2999,21 +3252,20 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div id="tab-logs" class="tp"><div class="ph"><div class="ph-titles"><h1 class="pt"><span class="icn" id="h-log-i"></span> لاگ‌ها</h1></div><div class="ph-actions"><button class="btn btn-g btn-s" onclick="ll()" id="logRefBtn"></button></div></div>' +
 '<div class="gl" style="padding:18px"><div id="lc" style="display:flex;flex-direction:column;gap:8px"></div></div></div>' +
 '</main></div>' +
-/* ═══ USER MODAL — with Relay IP selector ═══ */
+/* ═══ USER MODAL ═══ */
 '<div id="um" class="mb" style="display:none"><div class="md">' +
 '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><h3 id="umt" class="tg" style="font-size:19px">کاربر جدید</h3><button class="btn btn-g btn-s" onclick="cu()">✕</button></div>' +
 '<div class="fg"><div class="fd"><label>نام</label><input id="u1"></div>' +
-'<div class="fr"><div class="fd"><label>گروه</label><select id="u6"></select></div><div class="fd"><label>اپراتور</label><select id="u9"><option value="">هیچ</option><option value="mci">همراه اول</option><option value="irancell">ایرانسل</option><option value="rightel">رایتل</option><option value="mokhaberat">مخابرات</option></select></div></div>' +
+'<div class="fr"><div class="fd"><label>گروه</label><select id="u6"></select></div><div class="fd"><label>اپراتور</label><select id="u9"><option value="">هیچ</option><option value="mci">همراه اول</option><option value="irancell">ایرانسل</option><option value="rightel">رایتل</option><option value="mokhaberat">مخابرات</option><option value="shatel">شاتل</option></select></div></div>' +
 '<div class="fr"><div class="fd"><label>ترافیک (GB)</label><input id="u2" type="number" placeholder="0 = ∞"></div><div class="fd"><label>روزانه (GB)</label><input id="u3" type="number" placeholder="0 = ∞"></div></div>' +
 '<div class="fr"><div class="fd"><label>اعتبار (روز)</label><input id="u4" type="number" placeholder="0 = ∞"></div><div class="fd"><label>محدودیت کانفیگ</label><input id="u7" type="number" placeholder="0 = ∞"></div></div>' +
 '<div class="fr"><div class="fd"><label>پهنای باند (Kbps)</label><input id="u10" type="number" placeholder="0 = ∞"></div><div class="fd"><label>بازنشانی</label><select id="u8"><option value="none">غیرفعال</option><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly">ماهانه</option></select></div></div>' +
 '<div class="fd"><label>برچسب‌ها (با کاما)</label><input id="u11" placeholder="VIP,Premium"></div>' +
 '<div class="fd"><label>یادداشت</label><input id="u5"></div>' +
-/* Relay IP Section */
-'<div class="stt" style="margin-top:14px"><span class="icn" id="i-relay1"></span> Relay IP (اتصال به Cloudflare)</div>' +
-'<div style="font-size:11.5px;color:var(--text-2);margin-bottom:10px;line-height:1.7">برای اینکه کانفیگ‌های ساب به سایت‌های Cloudflare متصل شوند، یکی از مناطق زیر را انتخاب کنید. این IPها بهترین کیفیت و پایداری را دارند.</div>' +
+'<div class="stt" style="margin-top:14px"><span class="icn" id="i-relay1"></span> Relay IP</div>' +
+'<div style="font-size:11.5px;color:var(--text-2);margin-bottom:10px;line-height:1.7">انتخاب منطقه رله برای اتصال پایدار کانفیگ به Cloudflare.</div>' +
 '<div class="relay-grid" id="relayPresetGrid"></div>' +
-'<div class="fd" style="margin-top:12px"><label>آی‌پی/دامنه رله سفارشی (اختیاری، خط‌به‌خط)</label><textarea id="uRelayIps" rows="2" placeholder="ProxyIP.CMLiussss.net&#10;188.114.96.1"></textarea></div>' +
+'<div class="fd" style="margin-top:12px"><label>آی‌پی رله سفارشی (خط‌به‌خط)</label><textarea id="uRelayIps" rows="2" placeholder="ProxyIP.CMLiussss.net&#10;188.114.96.1"></textarea></div>' +
 '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="su2()">ذخیره</button><button class="btn btn-g" onclick="cu()">انصراف</button></div></div></div></div>' +
 '<div id="gml" class="mb" style="display:none"><div class="md">' +
 '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><h3 id="gmt" class="tg" style="font-size:19px">گروه</h3><button class="btn btn-g btn-s" onclick="cg()">✕</button></div>' +
@@ -3139,19 +3391,17 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'function setIcon(id,name){const el=document.getElementById(id);if(el)el.innerHTML=ICONS[name]||ICONS.info}' +
 'function setBtn(id,iconName,label){const el=document.getElementById(id);if(el)el.innerHTML=icon(iconName)+(label?\'<span>\'+label+\'</span>\':"")}' +
 'const AR="__API_ROUTE__",PN="__PANEL_NAME__";' +
-'let S={token:null,me:null,config:null,users:[],managers:[],groups:[],sessions:[],nodes:[],regions:[],activeRegions:[],cronJobs:[],cronActions:[],webhooks:[],webhookEvents:[],banned:[],crisisPresets:[],crisisHistory:[],ispTemplates:{},workflows:[],workflowTriggers:[],workflowActions:[],upstreams:[],dnsPool:[],dnsStrategy:"weighted",relayPresets:[],inbound:null,inboundUsers:[],editU:null,editG:null,editM:null,editCron:null,editWh:null,editRegion:null,editWf:null,editUserInbound:null,days:7,pollTimer:null,charts:{},ports:[],selectedRelayPreset:"auto"};' +
+'const CF_HTTPS_PORTS=["443","8443","2053","2083","2087","2096"];' +
+'const CF_ALL_PORTS=["80","8080","8880","2052","2082","2086","2095","443","8443","2053","2083","2087","2096"];' +
+'let S={token:null,me:null,config:null,users:[],managers:[],groups:[],sessions:[],nodes:[],regions:[],activeRegions:[],cronJobs:[],cronActions:[],webhooks:[],webhookEvents:[],banned:[],crisisPresets:[],crisisHistory:[],ispTemplates:{},workflows:[],workflowTriggers:[],workflowActions:[],upstreams:[],dnsPool:[],dnsStrategy:"weighted",relayPresets:[],inbound:null,inboundUsers:[],editU:null,editG:null,editM:null,editCron:null,editWh:null,editRegion:null,editWf:null,editUserInbound:null,days:7,pollTimer:null,charts:{},ports:[],selectedRelayPreset:"auto",selectedUsers:new Set()};' +
 'const $=id=>document.getElementById(id);' +
 'function ts(m,t){t=t||"info";const c={info:"#38bdf8",ok:"#10b981",warn:"#f59e0b",error:"#ef4444"}[t],ic={info:"info",ok:"check",warn:"alert",error:"x"}[t];const e=document.createElement("div");e.className="tst";e.style.borderLeft="3px solid "+c;e.innerHTML=icon(ic)+\'<span style="color:\'+c+\'">\'+m+\'</span>\';$("tb").appendChild(e);setTimeout(()=>{e.style.opacity="0";e.style.transition=".25s";setTimeout(()=>e.remove(),250)},2600)}' +
 'async function ap(p,o){o=o||{};const h=Object.assign({"Content-Type":"application/json"},o.headers||{});if(S.token)h.Authorization="Bearer "+S.token;const r=await fetch("/"+AR+p,Object.assign({},o,{headers:h}));let d;try{d=await r.json()}catch(e){d={}}return{ok:r.ok,status:r.status,data:d}}' +
 'function showLoginError(m){const el=$("le");el.style.display="block";el.textContent=m}' +
 'async function login(){const u=$("lu").value.trim(),p=$("lp").value;if(!u||!p){showLoginError("نام و رمز الزامی");return}const b=$("lb");b.disabled=true;b.textContent="در حال ورود...";$("le").style.display="none";try{const r=await fetch("/"+AR+"/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});let d;try{d=await r.json()}catch(pe){showLoginError("پاسخ نامعتبر ("+r.status+")");b.disabled=false;b.textContent="ورود به پنل";return}if(d.ok||d.success){const sess=(d.data&&d.data.session)||d.session;const cfg=(d.data&&d.data.config)||d.config;if(!sess||!sess.token){showLoginError("توکن دریافت نشد");b.disabled=false;b.textContent="ورود به پنل";return}S.token=sess.token;S.me=sess;S.config=cfg||{};sessionStorage.setItem("hp_token",S.token);sessionStorage.setItem("hp_user",u);show()}else{showLoginError(d.error||"خطا");b.disabled=false;b.textContent="ورود به پنل"}}catch(e){showLoginError("خطا: "+(e.message||"network"));b.disabled=false;b.textContent="ورود به پنل"}}' +
 'function renderNav(){const has=p=>S.me.isRoot||S.me.permissions.includes("all")||S.me.permissions.includes(p);const items=[{g:"عمومی"},{t:"overview",i:"home",l:"داشبورد"},{t:"weather",i:"sun",l:"وضعیت شبکه"},{t:"users",i:"users",l:"کاربران",p:"users"},{t:"groups",i:"group",l:"گروه‌ها",p:"groups"},{t:"traffic",i:"chart",l:"ترافیک",p:"stats"},{t:"anomalies",i:"alert",l:"هشدارها",p:"stats"},{t:"predictive",i:"predict",l:"پیش‌بینی",p:"stats"},{t:"suggestions",i:"bulb",l:"پیشنهادات",p:"stats"},{g:"مدیریت"},{t:"managers",i:"crown",l:"مدیران",p:"managers"},{t:"sessions",i:"activity",l:"نشست‌ها",p:"managers"},{t:"nodes",i:"server",l:"نودها",p:"nodes"},{t:"banned",i:"ban",l:"IPهای بسته",p:"advanced"},{g:"اتوماسیون"},{t:"workflows",i:"workflow",l:"Workflows",p:"advanced"},{t:"cron",i:"clock",l:"Cron Jobs",p:"cron"},{t:"webhooks",i:"webhook",l:"Webhooks",p:"webhooks"},{t:"crisis",i:"crisis",l:"اعلان بحران",p:"users"},{g:"شبکه"},{t:"inbounds",i:"tag",l:"اینباند کانفیگ",p:"inbounds"},{t:"regions",i:"globe",l:"مناطق IP",p:"advanced"},{t:"isp",i:"wifi",l:"قالب اپراتور",p:"advanced"},{t:"dns",i:"layers",l:"DNS Pool",p:"advanced"},{t:"upstreams",i:"link",l:"Upstreams",p:"advanced"},{t:"speedtest",i:"gauge",l:"تست سرعت",p:"advanced"},{t:"latency",i:"radar",l:"Latency Map",p:"stats"},{t:"dpi",i:"shield",l:"DPI Detection",p:"advanced"},{g:"تنظیمات"},{t:"settings",i:"settings",l:"تنظیمات",p:"settings"},{t:"advanced",i:"sliders",l:"پیشرفته",p:"advanced"},{t:"apikeys",i:"key",l:"API Keys",p:"apikeys"},{t:"backup",i:"save",l:"پشتیبان",p:"backup"},{t:"logs",i:"log",l:"لاگ‌ها",p:"logs"}];let h="";items.forEach(x=>{if(x.g){h+=\'<div class="nav-group">\'+x.g+\'</div>\'}else{if(!has(x.p))return;h+=\'<a class="nv\'+(x.t==="overview"?" on":"")+\'" data-tab="\'+x.t+\'">\'+icon(x.i)+\'<span>\'+x.l+\'</span></a>\'}});$("nav").innerHTML=h;document.querySelectorAll(".nv").forEach(n=>n.addEventListener("click",()=>tab(n.dataset.tab)))}' +
-'function renderStaticIcons(){' +
-/* Login icons */
-'setIcon("lu-icon","users");setIcon("lp-icon","key");' +
-/* Page title icons */
+'function renderStaticIcons(){setIcon("lu-icon","users");setIcon("lp-icon","key");' +
 'setIcon("h-ov","home");setIcon("h-weather-i","sun");setIcon("h-users-i","users");setIcon("h-groups-i","group");setIcon("h-traffic-i","chart");setIcon("h-anom-i","alert");setIcon("h-pred-i","predict");setIcon("h-sug-i","bulb");setIcon("h-inb-i","tag");setIcon("h-mgr-i","crown");setIcon("h-sess-i","activity");setIcon("h-node-i","server");setIcon("h-ban-i","ban");setIcon("h-wf-i","workflow");setIcon("h-cron-i","clock");setIcon("h-wh-i","webhook");setIcon("h-cri-i","crisis");setIcon("h-reg-i","globe");setIcon("h-isp-i","wifi");setIcon("h-dns-i","layers");setIcon("h-up-i","link");setIcon("h-spd-i","gauge");setIcon("h-lat-i","radar");setIcon("h-dpi-i","shield");setIcon("h-set-i","settings");setIcon("h-adv-i","sliders");setIcon("h-key-i","key");setIcon("h-bk-i","save");setIcon("h-log-i","log");' +
-/* Header action buttons with ICON + LABEL */
 'setBtn("refBtn","refresh","بروزرسانی");setBtn("wrefBtn","refresh","بروزرسانی");' +
 'setBtn("expBtn","download","CSV");setBtn("impBtn","upload","CSV");setBtn("addUserBtn","plus","کاربر");' +
 'setBtn("addGroupBtn","plus","گروه");setBtn("anomRefBtn","refresh","بررسی");setBtn("predRefBtn","refresh","بروزرسانی");' +
@@ -3162,7 +3412,6 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'setBtn("ispSaveBtn","save","ذخیره");setBtn("dnsTestBtn","zap","تست");setBtn("dnsSaveBtn","save","ذخیره");setBtn("addUpBtn","plus","Upstream");' +
 'setBtn("runSpdBtn","play2","شروع");setBtn("latRefBtn","refresh","بروزرسانی");setBtn("dpiBtn","scan","بررسی DPI");setBtn("addKeyBtn","plus","کلید");' +
 'setBtn("expCfgBtn","download","JSON");setBtn("impCfgBtn","upload","JSON");setBtn("mkBkBtn","save","بکاپ");setBtn("logRefBtn","refresh","بروزرسانی");' +
-/* Stat icons */
 'setIcon("i-st1","users");setIcon("i-st2","check");setIcon("i-st3","pause");setIcon("i-st4","x");setIcon("i-st5","chart");setIcon("i-st6","sun");setIcon("i-st7","activity");setIcon("i-st8","clock");' +
 'setIcon("i-chart1","chart");setIcon("i-chart2","chart");setIcon("i-trophy","trophy");setIcon("i-chart3-i","chart");setIcon("i-chart4-i","chart");setIcon("i-chart5-i","chart");setIcon("i-chartPred-i","predict");' +
 'setIcon("i-inb1","settings");setIcon("i-inb2","link");setIcon("i-inb3","users");setIcon("i-cri1","crisis");setIcon("i-cri2","link");setIcon("i-cri3","log");' +
@@ -3178,19 +3427,19 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'if(t==="apikeys")lk();if(t==="traffic"){lhist();lcompare()}if(t==="managers")lm();if(t==="sessions")lsess();if(t==="nodes")lnodes();if(t==="regions")lregions();if(t==="backup")lbackup();if(t==="groups")lgroups();if(t==="anomalies")lanom();if(t==="cron")lcron();if(t==="webhooks")lwh();if(t==="banned")lbanned();if(t==="crisis")lcrisis();if(t==="isp")lisp();if(t==="weather")lweather();if(t==="predictive")lpredictive();if(t==="suggestions")lsug();if(t==="workflows")lwf();if(t==="dns")ldns();if(t==="upstreams")lup();if(t==="speedtest")lspeed();if(t==="latency")llatency();if(t==="inbounds")linbounds()}' +
 'function startPolling(){if(S.pollTimer)clearInterval(S.pollTimer);S.pollTimer=setInterval(()=>{if(document.hidden)return;const t=document.querySelector(".tp.on");if(!t)return;if(t.id==="tab-overview")ls()},15000)}' +
 'function refreshAll(){ls();lu2();ll();lgroups()}' +
-/* ═══ PORTS LIST BOX ═══ */
-'function renderPorts(){const c=$("portsListBox");if(!c)return;if(!S.ports||S.ports.length===0){c.innerHTML=\'<span style="color:var(--text-3);font-size:12px">هنوز پورتی اضافه نشده</span>\';return}c.innerHTML=S.ports.map(p=>\'<span class="list-item">\'+p+\'<span class="x" onclick="removePort(\\\'\'+p+\'\\\')">✕</span></span>\').join("")}' +
+/* ═══ PORTS ═══ */
+'function renderPorts(){const c=$("portsListBox");if(!c)return;if(!S.ports||S.ports.length===0){c.innerHTML=\'\';return}c.innerHTML=S.ports.map(p=>\'<span class="list-item port">\'+p+\'<span class="x" onclick="removePort(\\\'\'+p+\'\\\')">✕</span></span>\').join("")}' +
 'function addPort(){const inp=$("newPortInput");const v=(inp.value||"").trim();if(!v)return;if(!/^\\d{1,5}$/.test(v)||parseInt(v)<1||parseInt(v)>65535){ts("پورت نامعتبر (1-65535)","warn");return}if(S.ports.includes(v)){ts("این پورت قبلاً اضافه شده","warn");inp.value="";return}S.ports.push(v);inp.value="";inp.focus();renderPorts()}' +
 'function removePort(p){S.ports=S.ports.filter(x=>x!==p);renderPorts()}' +
-'function loadPresetPorts(){S.ports=["443","8443","2053","2083","2087","2096"];renderPorts();ts("پورت‌های استاندارد بارگذاری شد","ok")}' +
-/* ═══ CONFIG ═══ */
-'function fc(){const c=S.config||{};S.ports=((c.socketPorts||"443").split(/[\\r\\n,;\\s]+/).map(s=>s.trim()).filter(Boolean));renderPorts();' +
+'function loadPresetPorts(){S.ports=[...CF_HTTPS_PORTS];renderPorts();ts("پورت‌های HTTPS بارگذاری شد","ok")}' +
+'function loadAllPorts(){S.ports=[...CF_ALL_PORTS];renderPorts();ts("همه پورت‌های معتبر بارگذاری شد","ok")}' +
+'function fc(){const c=S.config||{};S.ports=((c.socketPorts||"443").toString().split(/[\\r\\n,;\\s]+/).map(s=>s.trim()).filter(Boolean));if(S.ports.length===0)S.ports=["443"];renderPorts();' +
 'const m={c1:"name",c2:"apiRoute",c3:"masterKey",c4:"mode",c6:"customDns",c7:"maintenanceHost",c8:"cleanIps",c9:"customLogo",c10:"customTitleColor",a1:"cfAccountId",a2:"cfApiToken",a3:"cfWorkerName",a4:"tgToken",a5:"tgChatId",a6:"tgAdminId",a7:"backupRelay",a8:"nat64Prefix",a9:"activeCarrier",a10:"activeFragment",a11:"iranRouting"};Object.keys(m).forEach(k=>{if(!$(k))return;if($(k).type==="checkbox")$(k).checked=!!c[m[k]];else $(k).value=c[m[k]]||""});' +
 'const fs=$("a10");if(fs){fs.innerHTML="";(c.fragmentPresets||[]).forEach(f=>{const o=document.createElement("option");o.value=f.id;o.textContent=f.name;if(f.id===c.activeFragment)o.selected=true;fs.appendChild(o)})}' +
 'const st=$("sst");if(st){st.textContent=c.isPaused?"متوقف":"فعال";st.style.color=c.isPaused?"var(--danger)":"var(--ok)"}}' +
 'async function sc(){const p={name:$("c1").value,masterKey:$("c3").value,mode:$("c4").value,socketPorts:S.ports.join(","),customDns:$("c6").value,maintenanceHost:$("c7").value,cleanIps:$("c8").value,customLogo:$("c9").value,customTitleColor:$("c10").value,cfAccountId:$("a1").value,cfApiToken:$("a2").value,cfWorkerName:$("a3").value,tgToken:$("a4").value,tgChatId:$("a5").value,tgAdminId:$("a6").value,backupRelay:$("a7").value,nat64Prefix:$("a8").value,activeCarrier:$("a9").value,activeFragment:$("a10").value,iranRouting:$("a11").checked};const r=await ap("/api/sync",{method:"POST",body:JSON.stringify({config:p})});if(r.data.ok||r.data.success){ts("ذخیره شد","ok");S.config=Object.assign({},S.config,p);fc();renderLogo()}else ts("خطا","error")}' +
 'async function clearLogo(){if(!confirm("حذف؟"))return;const r=await ap("/api/logo",{method:"POST",body:JSON.stringify({action:"clear"})});if(r.data.ok||r.data.success){ts("حذف","ok");S.config.customLogo="";renderLogo()}}' +
-/* ═══ RELAY PRESETS ═══ */
+/* ═══ RELAY ═══ */
 'async function loadRelayPresets(){try{const r=await fetch("/"+AR+"/api/relay-presets",{headers:{"Authorization":"Bearer "+S.token}});const d=await r.json();S.relayPresets=(d.presets||[])}catch(e){S.relayPresets=[]}}' +
 'function renderRelayGrid(selected){const c=$("relayPresetGrid");if(!c)return;if(!S.relayPresets.length){c.innerHTML=\'<div class="empty" style="padding:20px;font-size:12px">درحال بارگذاری...</div>\';return}c.innerHTML=S.relayPresets.map(p=>\'<div class="relay-card\'+(p.id===selected?" on":"")+\'" onclick="selectRelay(\\\'\'+p.id+\'\\\')"><span class="flag">\'+p.flag+\'</span><div class="name">\'+p.name+\'</div><div class="count">\'+(p.ips?p.ips.length:0)+\' IP</div></div>\').join("")}' +
 'function selectRelay(id){S.selectedRelayPreset=id;renderRelayGrid(id)}' +
@@ -3198,17 +3447,24 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'async function ls(){const r=await ap("/api/stats");if(!(r.data.ok||r.data.success))return;const s=r.data.data||r.data.stats;S.stats=s;$("st1").textContent=s.users.total;$("st2").textContent=s.users.active;$("st3").textContent=s.users.paused;$("st4").textContent=s.users.expired;$("st5").innerHTML=s.traffic.totalGB+" <small>GB</small>";$("st6").innerHTML=s.traffic.dailyGB+" <small>GB</small>";$("st7").textContent=s.system.activeConnections;$("st8").textContent=Math.floor(s.system.uptimeSeconds/3600)+"h";' +
 'let tp="";(s.system.topUsers||[]).forEach((u,i)=>{const pct=u.gb>0?Math.min(100,(u.gb/Math.max(1,s.traffic.totalGB))*100):0;const medal=i===0?"trophy":i===1?"chart":"check";tp+=\'<div style="padding:12px;border-radius:12px;background:var(--surface);margin-bottom:8px;display:flex;align-items:center;gap:12px"><span style="color:var(--violet)">\'+icon(medal)+\'</span><div style="flex:1"><div style="font-weight:700;font-size:13px">\'+u.name+\'</div><div class="prg"><div style="width:\'+pct.toFixed(1)+\'%"></div></div></div><div style="font-weight:800;color:var(--violet)">\'+u.gb+\' GB</div></div>\'});$("topUsers").innerHTML=tp||\'<div class="empty">\'+icon("info")+\'داده نیست</div>\';setTimeout(()=>{c1();c2()},80)}' +
 /* ═══ USERS ═══ */
-'async function lu2(){const r=await ap("/api/users");if(!(r.data.ok||r.data.success))return;S.users=r.data.data||r.data.users||[];ru()}' +
+'async function lu2(){const r=await ap("/api/users");if(!(r.data.ok||r.data.success))return;S.users=r.data.data||r.data.users||[];S.selectedUsers.clear();updateBulkBar();ru();refreshGroupFilter()}' +
+'function refreshGroupFilter(){const s=$("groupFilter");if(!s)return;const cur=s.value;s.innerHTML=\'<option value="">همه گروه‌ها</option>\';const seen={};(S.users||[]).forEach(u=>{const g=u.groupId||"default";if(!seen[g]){seen[g]=1;const grp=(S.config.userGroups||[]).find(x=>x.id===g);const o=document.createElement("option");o.value=g;o.textContent=grp?grp.name:g;s.appendChild(o)}});s.value=cur||""}' +
 'function bd(s){const m={active:["bdg-ok","check","فعال"],paused:["bdg-w","pause","متوقف"],expired:["bdg-d","x","منقضی"],"auto-disabled":["bdg-d","ban","غیرفعال"]};const v=m[s]||["bdg-m","info",s];return \'<span class="bdg \'+v[0]+\'">\'+icon(v[1])+v[2]+\'</span>\'}' +
 'function fb(b){if(!b)return"0 GB";const g=b/1073741824;if(g<1)return(b/1048576).toFixed(1)+" MB";return g.toFixed(2)+" GB"}' +
-'function ru(){const q=($("userSearch")?.value||"").toLowerCase();let u=S.users;if(q)u=u.filter(x=>x.name.toLowerCase().includes(q)||x.id.toLowerCase().includes(q));if(!u.length){$("ub").innerHTML=\'<tr><td colspan="5" class="empty">\'+icon("users")+\'خالی</td></tr>\';return}let h="";u.forEach(x=>{const us=x.usage?fb(x.usage.total):"0 GB",lm=x.limitTotalReq?fb(x.limitTotalReq*1073741824/6000):"∞",ex=x.expiryMs?new Date(x.expiryMs).toLocaleDateString("fa-IR"):"∞";let pct=0;if(x.limitTotalReq&&x.usage&&x.usage.total){const lb=x.limitTotalReq*1073741824/6000;pct=Math.min(100,(x.usage.total/lb)*100)}const pc=pct>90?"d":pct>70?"w":"";const grp=(S.config.userGroups||[]).find(g=>g.id===(x.groupId||"default"));const tagHtml=(x.tags||[]).map(t=>\'<span class="tag-mini">\'+t+\'</span>\').join("");const relayBadge=x.relayIps?\'<span class="tag-mini" style="background:rgba(6,182,212,.15);color:#67e8f9">RELAY</span>\':"";h+=\'<tr><td><div style="font-weight:800">\'+(x.name||"—")+\'</div>\'+(grp?\'<span class="tag-mini" style="background:\'+grp.color+\'22;color:\'+grp.color+\'">\'+grp.name+\'</span>\':"")+tagHtml+relayBadge+\'</td><td>\'+bd(x.status)+\'</td><td><div style="font-weight:700;font-size:12px">\'+us+\'</div><div style="font-size:10px;color:var(--text-2)">/ \'+lm+\'</div><div class="prg \'+pc+\'"><div style="width:\'+pct.toFixed(1)+\'%"></div></div></td><td style="font-size:12px">\'+ex+\'</td><td style="text-align:left">\'+iconBtn("link","sun",x.id,"ساب")+iconBtn("pause","tu",x.id,"توقف")+iconBtn("edit","eu",x.id,"ویرایش")+iconBtn("trash","du",x.id,"حذف","btn-d")+\'</td></tr>\'});$("ub").innerHTML=h}' +
+'function toggleSelectAll(checked){const q=($("userSearch")?.value||"").toLowerCase();const gf=$("groupFilter")?.value||"";let arr=S.users;if(q)arr=arr.filter(x=>x.name.toLowerCase().includes(q)||x.id.toLowerCase().includes(q));if(gf)arr=arr.filter(x=>(x.groupId||"default")===gf);arr.forEach(u=>{if(checked)S.selectedUsers.add(u.id);else S.selectedUsers.delete(u.id)});ru();updateBulkBar()}' +
+'function toggleSelect(id,checked){if(checked)S.selectedUsers.add(id);else S.selectedUsers.delete(id);updateBulkBar()}' +
+'function updateBulkBar(){const b=$("bulkBar");if(!b)return;const n=S.selectedUsers.size;if(n>0){b.style.display="flex";$("bulkCount").textContent=n}else b.style.display="none";const sa=$("selectAllUsers");if(sa)sa.checked=false}' +
+'function bulkClear(){S.selectedUsers.clear();updateBulkBar();ru()}' +
+'async function bulkAction(action){if(S.selectedUsers.size===0)return;const ids=Array.from(S.selectedUsers);const r=await ap("/api/users/bulk-action",{method:"POST",body:JSON.stringify({ids,action})});if(r.data.ok||r.data.success){ts("انجام شد ("+r.data.affected+")","ok");bulkClear();lu2()}}' +
+'async function bulkReset(){if(S.selectedUsers.size===0)return;if(!confirm("ریست مصرف "+S.selectedUsers.size+" کاربر؟"))return;const ids=Array.from(S.selectedUsers);const r=await ap("/api/users/bulk-action",{method:"POST",body:JSON.stringify({ids,action:"reset"})});if(r.data.ok||r.data.success){ts("انجام شد","ok");bulkClear();lu2()}}' +
+'function ru(){const q=($("userSearch")?.value||"").toLowerCase();const gf=$("groupFilter")?.value||"";let u=S.users;if(q)u=u.filter(x=>x.name.toLowerCase().includes(q)||x.id.toLowerCase().includes(q));if(gf)u=u.filter(x=>(x.groupId||"default")===gf);if(!u.length){$("ub").innerHTML=\'<tr><td colspan="6" class="empty">\'+icon("users")+\'خالی</td></tr>\';return}let h="";u.forEach(x=>{const us=x.usage?fb(x.usage.total):"0 GB",lm=x.limitTotalReq?fb(x.limitTotalReq*1073741824/6000):"∞",ex=x.expiryMs?new Date(x.expiryMs).toLocaleDateString("fa-IR"):"∞";let pct=0;if(x.limitTotalReq&&x.usage&&x.usage.total){const lb=x.limitTotalReq*1073741824/6000;pct=Math.min(100,(x.usage.total/lb)*100)}const pc=pct>90?"d":pct>70?"w":"";const grp=(S.config.userGroups||[]).find(g=>g.id===(x.groupId||"default"));const tagHtml=(x.tags||[]).map(t=>\'<span class="tag-mini">\'+t+\'</span>\').join("");const relayBadge=x.relayIps||x.relayPresetId?\'<span class="tag-mini" style="background:rgba(6,182,212,.15);color:#67e8f9">RELAY</span>\':"";const checked=S.selectedUsers.has(x.id)?"checked":"";h+=\'<tr><td><input type="checkbox" \'+checked+\' onchange="toggleSelect(\\\'\'+x.id+\'\\\',this.checked)"></td><td><div style="font-weight:800">\'+(x.name||"—")+\'</div>\'+(grp?\'<span class="tag-mini" style="background:\'+grp.color+\'22;color:\'+grp.color+\'">\'+grp.name+\'</span>\':"")+tagHtml+relayBadge+\'</td><td>\'+bd(x.status)+\'</td><td><div style="font-weight:700;font-size:12px">\'+us+\'</div><div style="font-size:10px;color:var(--text-2)">/ \'+lm+\'</div><div class="prg \'+pc+\'"><div style="width:\'+pct.toFixed(1)+\'%"></div></div></td><td style="font-size:12px">\'+ex+\'</td><td style="text-align:left">\'+iconBtn("link","sun",x.id,"ساب")+iconBtn("pause","tu",x.id,"توقف")+iconBtn("edit","eu",x.id,"ویرایش")+iconBtn("trash","du",x.id,"حذف","btn-d")+\'</td></tr>\'});$("ub").innerHTML=h}' +
 'function iconBtn(ic,handler,arg,title,cls){return \'<button class="btn \'+(cls||"btn-g")+\' btn-s icon-btn" onclick="\'+handler+\'(\\\'\'+arg+\'\\\')" title="\'+title+\'">\'+icon(ic)+\'</button>\'}' +
 'function sun(id){const u=S.users.find(x=>x.id===id);if(!u)return;window.open(location.origin+"/"+AR+"?sub="+encodeURIComponent(u.name),"_blank")}' +
 'async function ou(){S.editU=null;$("umt").textContent="کاربر جدید";["u1","u2","u3","u4","u5","u7","u10","u11","uRelayIps"].forEach(k=>{if($(k))$(k).value=""});$("u8").value="none";refreshGroupSelect();if(!S.relayPresets.length)await loadRelayPresets();S.selectedRelayPreset="auto";renderRelayGrid("auto");$("um").style.display="flex"}' +
 'function cu(){$("um").style.display="none"}' +
 'function refreshGroupSelect(){const s=$("u6");if(!s)return;s.innerHTML="";(S.config.userGroups||[]).forEach(g=>{const o=document.createElement("option");o.value=g.id;o.textContent=g.name;s.appendChild(o)})}' +
 'async function eu(id){const u=S.users.find(x=>x.id===id);if(!u)return;S.editU=u;$("umt").textContent="ویرایش: "+u.name;$("u1").value=u.name||"";$("u2").value=u.limitTotalReq?(u.limitTotalReq/6000).toFixed(2):"";$("u3").value=u.limitDailyReq?(u.limitDailyReq/6000).toFixed(2):"";$("u4").value=u.expiryMs?Math.max(0,Math.ceil((u.expiryMs-Date.now())/86400000)):"";$("u5").value=u.notes||"";$("u7").value=u.maxConfigs||"";$("u9").value=u.isp||"";$("u10").value=u.bandwidthKbps||"";$("u11").value=(u.tags||[]).join(",");$("uRelayIps").value=u.relayIps||"";const c=(S.config.autoResetCycles||{})[u.id];$("u8").value=c?c.type:"none";refreshGroupSelect();$("u6").value=u.groupId||"default";if(!S.relayPresets.length)await loadRelayPresets();S.selectedRelayPreset=u.relayPresetId||"auto";renderRelayGrid(S.selectedRelayPreset);$("um").style.display="flex"}' +
-'async function su2(){const n=$("u1").value.trim();if(!n){ts("نام الزامی","warn");return}const tagsArr=$("u11").value.split(",").map(t=>t.trim()).filter(Boolean);const p={name:n,groupId:$("u6").value,isp:$("u9").value||null,tags:tagsArr,trafficLimit:$("u2").value||0,dailyLimit:$("u3").value||0,expiryDays:$("u4").value||0,notes:$("u5").value,maxConfigs:$("u7").value||0,bandwidthKbps:$("u10").value||0,relayIps:$("uRelayIps").value,relayMode:"single",relayPresetId:S.selectedRelayPreset||"",autoReset:{type:$("u8").value}};let r;if(S.editU)r=await ap("/api/users?id="+encodeURIComponent(S.editU.id),{method:"PUT",body:JSON.stringify(p)});else r=await ap("/api/users",{method:"POST",body:JSON.stringify(p)});if(r.data.ok||r.data.success){ts("ذخیره","ok");cu();lu2();ls()}else ts("خطا","error")}' +
+'async function su2(){const n=$("u1").value.trim();if(!n){ts("نام الزامی","warn");return}const tagsArr=$("u11").value.split(",").map(t=>t.trim()).filter(Boolean);const p={name:n,groupId:$("u6").value,isp:$("u9").value||null,tags:tagsArr,trafficLimit:$("u2").value||0,dailyLimit:$("u3").value||0,expiryDays:$("u4").value||0,notes:$("u5").value,maxConfigs:$("u7").value||0,bandwidthKbps:$("u10").value||0,relayIps:$("uRelayIps").value,relayMode:"single",relayPresetId:S.selectedRelayPreset||"",autoReset:{type:$("u8").value}};let r;if(S.editU)r=await ap("/api/users?id="+encodeURIComponent(S.editU.id),{method:"PUT",body:JSON.stringify(p)});else r=await ap("/api/users",{method:"POST",body:JSON.stringify(p)});if(r.data.ok||r.data.success){ts("ذخیره","ok");cu();lu2();ls()}else ts(r.data.error||"خطا","error")}' +
 'async function tu(id){const r=await ap("/api/users?id="+encodeURIComponent(id)+"&action=toggle",{method:"POST"});if(r.data.ok||r.data.success){ts("✓","ok");lu2()}}' +
 'async function du(id){if(!confirm("حذف؟"))return;const r=await ap("/api/users?id="+encodeURIComponent(id),{method:"DELETE"});if(r.data.ok||r.data.success){ts("حذف","ok");lu2();ls()}}' +
 'function exportCsv(){window.open("/"+AR+"/api/users/bulk","_blank")}' +
@@ -3247,7 +3503,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'async function healthAll(){ts("تست...","info");const r=await ap("/api/nodes/health");if(r.data.ok||r.data.success){ts("انجام","ok");lnodes()}}' +
 /* ═══ Regions ═══ */
 'async function lregions(){const r=await ap("/api/regions");if(!(r.data.ok||r.data.success))return;const d=r.data.data||r.data;S.regions=d.regions||[];S.activeRegions=d.active||[];rr();lcleanResults()}' +
-'function rr(){const r=S.regions;if(!r.length){$("regionsGrid").innerHTML=\'<div class="empty">\'+icon("globe")+\'خالی</div>\';return}let h="";r.forEach(x=>{const a=S.activeRegions.includes(x.id);h+=\'<div class="node-card" onclick="togRegion(\\\'\'+x.id+\'\\\')" style="cursor:pointer;border-color:\'+(a?"rgba(6,182,212,.5)":"var(--border)")+\'"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><span style="font-size:26px">\'+x.flag+\'</span><div style="flex:1"><div style="font-weight:800;font-size:14px">\'+x.name+\'</div><div style="font-size:10.5px;color:var(--text-2)">\'+x.ips.length+\' آی‌پی</div></div>\'+(a?\'<span class="bdg bdg-ok">\'+icon("check")+\'</span>\':"")+\'</div>\'+(x.id!=="de"&&x.id!=="ae"?\'<div onclick="event.stopPropagation()">\'+iconBtn("trash","dregion",x.id,"حذف","btn-d")+\'</div>\':"")+\'</div>\'});$("regionsGrid").innerHTML=h}' +
+'function rr(){const r=S.regions;if(!r.length){$("regionsGrid").innerHTML=\'<div class="empty">\'+icon("globe")+\'خالی</div>\';return}let h="";r.forEach(x=>{const a=S.activeRegions.includes(x.id);h+=\'<div class="node-card" onclick="togRegion(\\\'\'+x.id+\'\\\')" style="cursor:pointer;border-color:\'+(a?"rgba(6,182,212,.5)":"var(--border)")+\'"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><span style="font-size:26px">\'+x.flag+\'</span><div style="flex:1"><div style="font-weight:800;font-size:14px">\'+x.name+\'</div><div style="font-size:10.5px;color:var(--text-2)">\'+x.ips.length+\' آی‌پی</div></div>\'+(a?\'<span class="bdg bdg-ok">\'+icon("check")+\'</span>\':"")+\'</div>\'+(x.id!=="de"&&x.id!=="ae"&&x.id!=="us"?\'<div onclick="event.stopPropagation()">\'+iconBtn("trash","dregion",x.id,"حذف","btn-d")+\'</div>\':"")+\'</div>\'});$("regionsGrid").innerHTML=h}' +
 'async function togRegion(id){const r=await ap("/api/regions",{method:"POST",body:JSON.stringify({action:"toggle",id})});if(r.data.ok||r.data.success){S.activeRegions=r.data.active;rr()}}' +
 'function oregion(){$("r1").value="";$("r2").value="";$("r3").value="";$("rm").style.display="flex"}' +
 'function cr(){$("rm").style.display="none"}' +
@@ -3257,7 +3513,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'async function runCleanIp(){ts("تست...","info");const r=await ap("/api/cleanip/test",{method:"POST"});if(r.data.ok||r.data.success){ts("تمام","ok");lcleanResults()}}' +
 'async function toggleAutoClean(){const v=$("autoClean").checked;await ap("/api/sync",{method:"POST",body:JSON.stringify({config:{autoCleanIpTest:v}})});S.config.autoCleanIpTest=v;ts(v?"فعال":"خاموش","ok")}' +
 /* ═══ ISP ═══ */
-'async function lisp(){const r=await ap("/api/isp-templates");if(!(r.data.ok||r.data.success))return;S.ispTemplates=r.data.data||{};const t=S.ispTemplates;const keys=Object.keys(t);if(!keys.length){$("ispGrid").innerHTML=\'<div class="empty">خالی</div>\';return}let h="";keys.forEach(k=>{const x=t[k];h+=\'<div class="node-card"><div style="font-weight:800;margin-bottom:12px">\'+x.name+\' <span class="tag-mini">\'+k+\'</span></div><div class="fg"><div class="fr"><div class="fd"><label>Fragment</label><input id="isp_\'+k+\'_frag" value="\'+(x.fragment||"")+\'"></div><div class="fd"><label>Ports</label><input id="isp_\'+k+\'_ports" value="\'+(x.ports||"443")+\'"></div></div><div class="fr"><div class="fd"><label>Agent</label><input id="isp_\'+k+\'_agent" value="\'+(x.agent||"chrome")+\'"></div><div class="fd"><label>Extra SNI</label><input id="isp_\'+k+\'_sni" value="\'+(x.extraSni||"")+\'"></div></div></div></div>\'});$("ispGrid").innerHTML=h}' +
+'async function lisp(){const r=await ap("/api/isp-templates");if(!(r.data.ok||r.data.success))return;S.ispTemplates=r.data.data||{};const t=S.ispTemplates;const keys=Object.keys(t);if(!keys.length){$("ispGrid").innerHTML=\'<div class="empty">خالی</div>\';return}let h="";keys.forEach(k=>{const x=t[k];h+=\'<div class="node-card"><div style="font-weight:800;margin-bottom:12px">\'+x.name+\' <span class="tag-mini">\'+k+\'</span></div><div class="fg"><div class="fr"><div class="fd"><label>Fragment</label><input id="isp_\'+k+\'_frag" value="\'+(x.fragment||"")+\'"></div><div class="fd"><label>Ports (خالی=سراسری)</label><input id="isp_\'+k+\'_ports" value="\'+(x.ports||"")+\'" placeholder=""></div></div><div class="fr"><div class="fd"><label>Agent</label><input id="isp_\'+k+\'_agent" value="\'+(x.agent||"chrome")+\'"></div><div class="fd"><label>Extra SNI</label><input id="isp_\'+k+\'_sni" value="\'+(x.extraSni||"")+\'"></div></div></div></div>\'});$("ispGrid").innerHTML=h}' +
 'async function saveIsp(){const t={};Object.keys(S.ispTemplates).forEach(k=>{t[k]={name:S.ispTemplates[k].name,fragment:$("isp_"+k+"_frag").value,ports:$("isp_"+k+"_ports").value,agent:$("isp_"+k+"_agent").value,extraSni:$("isp_"+k+"_sni").value}});const r=await ap("/api/isp-templates",{method:"POST",body:JSON.stringify({templates:t})});if(r.data.ok||r.data.success){ts("ذخیره","ok");S.ispTemplates=t}}' +
 /* ═══ DNS ═══ */
 'async function ldns(){const r=await ap("/api/dns-pool");if(!(r.data.ok||r.data.success))return;const d=r.data.data||{};S.dnsPool=d.pool||[];S.dnsStrategy=d.strategy||"weighted";$("dnsStrategy").value=S.dnsStrategy;let h="";S.dnsPool.forEach((x,i)=>{h+=\'<div class="node-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><label class="switch"><input type="checkbox" \'+(x.enabled?"checked":"")+\' onchange="togDns(\'+i+\',this.checked)"><span class="sl2"></span></label><div style="flex:1"><div style="font-weight:800">\'+x.name+\'</div><div class="mono" style="font-size:10px;word-break:break-all">\'+x.url+\'</div></div><input type="number" value="\'+(x.weight||100)+\'" onchange="S.dnsPool[\'+i+\'].weight=parseInt(this.value)||100" style="width:70px;padding:8px;border-radius:10px;background:rgba(10,10,20,.6);border:1px solid var(--border);color:var(--text-0);font-family:inherit"></div></div>\'});$("dnsGrid").innerHTML=h}' +
@@ -3313,8 +3569,8 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 'async function sendCrisis(){const m=$("crisisMsg").value.trim();if(!m||!confirm("ارسال؟"))return;const r=await ap("/api/crisis",{method:"POST",body:JSON.stringify({action:"send",message:m})});if(r.data.success||r.data.ok){ts("ارسال به "+r.data.sent,"ok");$("crisisMsg").value="";lcrisis()}}' +
 /* ═══ Weather/Predictive/Suggest ═══ */
 'async function lweather(){const r=await ap("/api/network-weather");if(!(r.data.ok||r.data.success))return;const d=r.data.data||{};const ic=d.status==="storm"?"storm":d.status==="rainy"?"rain":d.status==="cloudy"?"cloud":"sun";$("weatherBox").innerHTML=\'<div class="weather"><div class="weather-icon">\'+icon(ic)+\'</div><div style="flex:1"><div style="font-size:22px;font-weight:900">\'+d.status.toUpperCase()+\'</div><div style="font-size:13px;color:var(--text-2);margin-top:8px">سلامت: \'+d.health+\'% · کاربران: \'+d.active+\'/\'+d.total+\'</div><div style="font-size:12px;color:var(--text-2);margin-top:6px">نودها: \'+d.nodesOnline+\'/\'+d.nodesTotal+\'</div>\'+(d.cfUsage!==null?\'<div style="font-size:12px;color:var(--text-2);margin-top:6px">CF: \'+d.cfUsage+\' (\'+d.cfPct+\'%)</div>\':"")+\'<div class="prg" style="margin-top:12px"><div style="width:\'+d.health+\'%"></div></div></div></div>\'}' +
-'async function lpredictive(){const r=await ap("/api/predictive");if(!(r.data.ok||r.data.success))return;const d=r.data.data||{};$("predictiveBox").innerHTML=\'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px"><div><div style="font-size:11px;color:var(--text-2)">میانگین روزانه</div><div style="font-size:22px;font-weight:900;color:var(--violet);margin-top:8px">\'+d.avg.toFixed(2)+\' GB</div></div><div><div style="font-size:11px;color:var(--text-2)">روند</div><div style="font-size:22px;font-weight:900;color:\'+(d.trend>0?"var(--danger)":"var(--ok)")+\';margin-top:8px">\'+(d.trend>0?"+":"")+d.trend.toFixed(3)+\'</div></div><div><div style="font-size:11px;color:var(--text-2)">پیش‌بینی هفته</div><div style="font-size:22px;font-weight:900;color:var(--info);margin-top:8px">\'+d.nextWeekTotal+\' GB</div></div></div>\';if(S.charts.chPred)S.charts.chPred.destroy();const cv=$("chPred");if(!cv)return;S.charts.chPred=new Chart(cv.getContext("2d"),{type:"line",data:{labels:(d.predictions||[]).map(x=>x.date.slice(5)),datasets:[{label:"GB",data:(d.predictions||[]).map(x=>x.gb),borderColor:"#ec4899",backgroundColor:"rgba(236,72,153,.15)",fill:true,tension:.4,borderWidth:3,pointBackgroundColor:"#8b5cf6",pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#b4b4cc"}}},scales:{x:{ticks:{color:"#7a7a95"},grid:{color:"rgba(255,255,255,.04)"}},y:{ticks:{color:"#7a7a95"},grid:{color:"rgba(255,255,255,.04)"},beginAtZero:true}}}})}' +
-'async function lsug(){const r=await ap("/api/suggestions");if(!(r.data.ok||r.data.success))return;const a=r.data.data||r.data.suggestions||[];if(!a.length){$("sugList").innerHTML=\'<div class="empty">\'+icon("bulb")+\'هیچ پیشنهادی</div>\';return}let h="";a.forEach(x=>{const ic=x.icon==="isp"?"wifi":x.icon==="globe"?"globe":x.icon==="target"?"radar":x.icon==="save"?"save":x.icon==="alert"?"alert":x.icon==="clock"?"clock":x.icon==="webhook"?"webhook":x.icon==="workflows"?"workflow":"bulb";const col=x.level==="warn"?"var(--warn)":"var(--info)";h+=\'<div class="suggestion">\'+icon(ic)+\'<div style="flex:1"><div style="font-weight:800;font-size:14px;color:\'+col+\'">\'+x.title+\'</div><div style="font-size:12.5px;color:var(--text-2);margin-top:6px">\'+x.desc+\'</div>\'+(x.action?\'<button class="btn btn-g btn-s" style="margin-top:10px" onclick="handleSug(\\\'\'+x.action+\'\\\')">برو</button>\':"")+\'</div></div>\'});$("sugList").innerHTML=h}' +
+'async function lpredictive(){const r=await ap("/api/predictive");if(!(r.data.ok||r.data.success))return;const d=r.data.data||{};$("predictiveBox").innerHTML=\'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px"><div><div style="font-size:11px;color:var(--text-2)">میانگین روزانه</div><div style="font-size:22px;font-weight:900;color:var(--violet);margin-top:8px">\'+d.avg.toFixed(2)+\' GB</div></div><div><div style="font-size:11px;color:var(--text-2)">روند</div><div style="font-size:22px;font-weight:900;color:\'+(d.trend>0?"var(--danger)":"var(--ok)")+\';margin-top:8px">\'+(d.trend>0?"+":"")+d.trend.toFixed(3)+\'</div></div><div><div style="font-size:11px;color:var(--text-2)">پیش‌بینی هفته</div><div style="font-size:22px;font-weight:900;color:var(--info);margin-top:8px">\'+d.nextWeekTotal+\' GB</div></div></div>\';if(S.charts.chPred)S.charts.chPred.destroy();const cv=$("chPred");if(!cv)return;S.charts.chPred=new Chart(cv.getContext("2d"),{type:"line",data:{labels:(d.predictions||[]).map(x=>x.date.slice(5)),datasets:[{label:"GB",data:(d.predictions||[]).map(x=>x.gb),borderColor:"#ec4899",backgroundColor:"rgba(236,72,153,.15)",fill:true,tension:.4,borderWidth:3,pointBackgroundColor:"#8b5cf6",pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},plugins:{legend:{labels:{color:"#b4b4cc"}}},scales:{x:{ticks:{color:"#7a7a95"},grid:{color:"rgba(255,255,255,.04)"}},y:{ticks:{color:"#7a7a95"},grid:{color:"rgba(255,255,255,.04)"},beginAtZero:true}}}})}' +
+'async function lsug(){const r=await ap("/api/suggestions");if(!(r.data.ok||r.data.success))return;const a=r.data.data||r.data.suggestions||[];if(!a.length){$("sugList").innerHTML=\'<div class="empty">\'+icon("bulb")+\'هیچ پیشنهادی</div>\';return}let h="";a.forEach(x=>{const ic=x.icon==="isp"?"wifi":x.icon==="globe"?"globe":x.icon==="target"?"radar":x.icon==="save"?"save":x.icon==="alert"?"alert":x.icon==="clock"?"clock":x.icon==="webhook"?"webhook":x.icon==="workflows"?"workflow":x.icon==="ports"?"ports":"bulb";const col=x.level==="warn"?"var(--warn)":"var(--info)";h+=\'<div class="suggestion">\'+icon(ic)+\'<div style="flex:1"><div style="font-weight:800;font-size:14px;color:\'+col+\'">\'+x.title+\'</div><div style="font-size:12.5px;color:var(--text-2);margin-top:6px">\'+x.desc+\'</div>\'+(x.action?\'<button class="btn btn-g btn-s" style="margin-top:10px" onclick="handleSug(\\\'\'+x.action+\'\\\')">برو</button>\':"")+\'</div></div>\'});$("sugList").innerHTML=h}' +
 'function handleSug(a){if(a.startsWith("tab:"))tab(a.slice(4))}' +
 'async function lanom(){const r=await ap("/api/anomalies");if(!(r.data.ok||r.data.success))return;const a=r.data.data||r.data.anomalies||[];const el=$("anomList");if(!a.length){el.innerHTML=\'<div class="empty">\'+icon("check")+\'هیچ هشدار</div>\';return}let h="";a.forEach(x=>{h+=\'<div style="padding:14px;border-radius:12px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.3);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-weight:800">\'+x.name+\'</div><div style="font-size:11.5px;color:var(--text-2);margin-top:6px">امروز: \'+(x.today/6000).toFixed(2)+\' GB · میانگین: \'+(x.avg/6000).toFixed(2)+\' GB</div></div><span class="bdg bdg-d">×\'+x.ratio+\'</span></div>\'});el.innerHTML=h}' +
 /* ═══ Charts ═══ */
@@ -3366,7 +3622,7 @@ const DASHBOARD_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '</script></body></html>';
 
 /* ═══════════════════════════════════════════════════════════════
-   SUBSCRIPTION HTML — v1.0.6 Final (beautiful + app logos)
+   SUBSCRIPTION HTML — v1.0.7 (updated)
    ═══════════════════════════════════════════════════════════════ */
 const SUBSCRIPTION_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">' +
@@ -3378,12 +3634,14 @@ const SUBSCRIPTION_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<style>' +
 ':root{--bg:#05050a;--panel:#0a0a14;--surface:rgba(255,255,255,.03);--border:rgba(255,255,255,.07);--border-2:rgba(255,255,255,.14);--text:#f7f7fc;--text-2:#b4b4cc;--muted:#7a7a95;--muted-2:#4d4d66;--violet:#8b5cf6;--cyan:#06b6d4;--pink:#ec4899;--ok:#10b981;--warn:#f59e0b;--danger:#f43f5e;--grad:linear-gradient(135deg,#8b5cf6 0%,#d946ef 45%,#06b6d4 100%);--ease:cubic-bezier(.22,1,.36,1)}' +
 '*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}' +
-'html,body{background:var(--bg);color:var(--text);font-family:\'Vazirmatn\',system-ui,-apple-system,"SF Pro",sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh;overflow-x:hidden;line-height:1.55;text-rendering:optimizeSpeed}' +
+'html,body{background:var(--bg);color:var(--text);font-family:\'Vazirmatn\',system-ui,-apple-system,"SF Pro",sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;line-height:1.55}' +
 '.au{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;contain:strict}' +
-'.au::before,.au::after{content:"";position:absolute;border-radius:50%;filter:blur(110px);will-change:transform;transform:translateZ(0)}' +
+'.au::before,.au::after{content:"";position:absolute;border-radius:50%;filter:blur(110px);will-change:transform}' +
 '.au::before{width:700px;height:700px;top:-350px;right:-250px;background:radial-gradient(circle,#8b5cf6,transparent 65%);opacity:.5}' +
 '.au::after{width:600px;height:600px;bottom:-280px;left:-200px;background:radial-gradient(circle,#06b6d4,transparent 65%);opacity:.42}' +
 '@media(prefers-reduced-motion:reduce){.au::before,.au::after{animation:none}}' +
+'.otter-bg{position:fixed;left:-15%;top:50%;transform:translateY(-50%);width:50vw;max-width:600px;aspect-ratio:1;z-index:-1;pointer-events:none;opacity:.03}' +
+'@media(max-width:600px){.otter-bg{left:-30%;width:90vw}}' +
 '.w{max-width:680px;margin:0 auto;padding:28px 16px 56px;position:relative;z-index:1}' +
 '.hr{text-align:center;padding:38px 24px 30px;background:linear-gradient(160deg,rgba(22,22,38,.9),rgba(10,10,20,.95));border:1px solid var(--border-2);border-radius:30px;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:0 30px 80px -25px rgba(0,0,0,.8),0 0 60px -25px rgba(139,92,246,.4)}' +
 '.hr::before{content:"";position:absolute;top:-100px;right:-100px;width:300px;height:300px;background:radial-gradient(circle,rgba(139,92,246,.45),transparent 65%);pointer-events:none}' +
@@ -3420,7 +3678,6 @@ const SUBSCRIPTION_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.cb.ok{background:rgba(16,185,129,.22);color:#6ee7b7;border-color:rgba(16,185,129,.5)}' +
 '.qw{text-align:center;padding:22px;border-radius:18px;background:rgba(10,10,20,.4);border:1px solid var(--border);margin-bottom:16px}' +
 '.qi{width:190px;height:190px;border-radius:14px;background:#fff;padding:10px;box-shadow:0 15px 40px -15px rgba(139,92,246,.6)}' +
-/* ═══ App buttons with REAL logos ═══ */
 '.ba{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;background:rgba(255,255,255,.03);color:var(--text);border:1px solid var(--border);text-decoration:none;font-weight:700;font-size:13.5px;transition:all .2s;margin-bottom:10px}' +
 '.ba:hover{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.4);transform:translateX(-4px)}' +
 '.ba .app-logo{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;flex-shrink:0;box-shadow:0 6px 16px -6px rgba(0,0,0,.5)}' +
@@ -3430,11 +3687,12 @@ const SUBSCRIPTION_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '.ba .arrow{color:var(--muted);transition:transform .2s}' +
 '.ba:hover .arrow{transform:translateX(-3px);color:#fff}' +
 '.ft{text-align:center;padding:24px 0 8px;font-size:11.5px;color:var(--muted-2);line-height:2;font-weight:500}' +
-'.tt{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:14px 22px;border-radius:14px;background:rgba(20,20,35,.98);border:1px solid var(--border-2);color:var(--text);font-size:13px;font-weight:700;box-shadow:0 25px 60px -10px rgba(0,0,0,.8);z-index:1000;animation:ti .3s var(--ease);backdrop-filter:blur(20px)}' +
+'.tt{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:14px 22px;border-radius:14px;background:rgba(20,20,35,.98);border:1px solid var(--border-2);color:var(--text);font-size:13px;font-weight:700;box-shadow:0 25px 60px -10px rgba(0,0,0,.8);z-index:1000;animation:ti .3s var(--ease)}' +
 '@keyframes ti{from{opacity:0;transform:translate(-50%,26px) scale(.92)}to{opacity:1;transform:translate(-50%,0) scale(1)}}' +
 '.made-by{margin-top:14px;padding:11px 16px;border-radius:14px;background:linear-gradient(135deg,rgba(6,182,212,.1),rgba(236,72,153,.06));border:1px dashed rgba(139,92,246,.4);font-size:11.5px;color:#c7d2fe;font-weight:800;text-align:center;letter-spacing:.5px}' +
 '</style></head><body>' +
 '<div class="au"></div>' +
+'<div class="otter-bg">__OTTER_SVG__</div>' +
 '<div class="w">' +
 '<div class="hr"><div class="om" id="logoWrap">__CUSTOM_LOGO_BLOCK__' +
 '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" id="defaultLogo">' +
@@ -3464,32 +3722,14 @@ const SUBSCRIPTION_HTML = '<!DOCTYPE html><html lang="fa" dir="rtl"><head>' +
 '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;margin-top:14px;font-weight:800">📄 لینک خام (V2Ray)</div>' +
 '<div class="lb"><code>__SYNC_RAW__</code><button class="cb" onclick="cl(\'__SYNC_RAW__\',this)">📋 کپی</button></div>' +
 '</div>' +
-/* App list with REAL logos (inline SVG + brand colors) */
 '<div class="cd"><div class="stt"><span class="em">📱</span> اپلیکیشن‌های پیشنهادی</div>' +
-'<a class="ba" href="https://github.com/KaringX/karing/releases" target="_blank" rel="noopener">' +
-'<span class="app-logo" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">K</span>' +
-'<div class="app-info"><div class="app-name">Karing</div><div class="app-desc">iOS · Android · Windows</div></div>' +
-'<span class="arrow">←</span></a>' +
-'<a class="ba" href="https://github.com/MatsuriDayo/NekoBoxForAndroid/releases" target="_blank" rel="noopener">' +
-'<span class="app-logo" style="background:linear-gradient(135deg,#f59e0b,#d97706)">N</span>' +
-'<div class="app-info"><div class="app-name">NekoBox</div><div class="app-desc">Android · NekoRay</div></div>' +
-'<span class="arrow">←</span></a>' +
-'<a class="ba" href="https://github.com/2dust/v2rayNG/releases" target="_blank" rel="noopener">' +
-'<span class="app-logo" style="background:linear-gradient(135deg,#10b981,#059669)">V</span>' +
-'<div class="app-info"><div class="app-name">v2rayNG</div><div class="app-desc">Android · Stable</div></div>' +
-'<span class="arrow">←</span></a>' +
-'<a class="ba" href="https://github.com/MetaCubeX/ClashMetaForAndroid/releases" target="_blank" rel="noopener">' +
-'<span class="app-logo" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">C</span>' +
-'<div class="app-info"><div class="app-name">Clash Meta</div><div class="app-desc">Android · Clash</div></div>' +
-'<span class="arrow">←</span></a>' +
-'<a class="ba" href="https://apps.apple.com/app/shadowrocket/id932747118" target="_blank" rel="noopener">' +
-'<span class="app-logo" style="background:linear-gradient(135deg,#ec4899,#db2777)">S</span>' +
-'<div class="app-info"><div class="app-name">Shadowrocket</div><div class="app-desc">iOS · Paid</div></div>' +
-'<span class="arrow">←</span></a>' +
-'<a class="ba" href="https://apps.apple.com/app/streisand/id6450534064" target="_blank" rel="noopener">' +
-'<span class="app-logo" style="background:linear-gradient(135deg,#38bdf8,#0284c7)">St</span>' +
-'<div class="app-info"><div class="app-name">Streisand</div><div class="app-desc">iOS · Free</div></div>' +
-'<span class="arrow">←</span></a>' +
+'<a class="ba" href="https://github.com/KaringX/karing/releases" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">K</span><div class="app-info"><div class="app-name">Karing</div><div class="app-desc">iOS · Android · Windows</div></div><span class="arrow">←</span></a>' +
+'<a class="ba" href="https://github.com/MatsuriDayo/NekoBoxForAndroid/releases" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#f59e0b,#d97706)">N</span><div class="app-info"><div class="app-name">NekoBox</div><div class="app-desc">Android · NekoRay</div></div><span class="arrow">←</span></a>' +
+'<a class="ba" href="https://github.com/2dust/v2rayNG/releases" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#10b981,#059669)">V</span><div class="app-info"><div class="app-name">v2rayNG</div><div class="app-desc">Android · Stable</div></div><span class="arrow">←</span></a>' +
+'<a class="ba" href="https://github.com/MetaCubeX/ClashMetaForAndroid/releases" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">C</span><div class="app-info"><div class="app-name">Clash Meta</div><div class="app-desc">Android · Clash</div></div><span class="arrow">←</span></a>' +
+'<a class="ba" href="https://apps.apple.com/app/shadowrocket/id932747118" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#ec4899,#db2777)">S</span><div class="app-info"><div class="app-name">Shadowrocket</div><div class="app-desc">iOS · Paid</div></div><span class="arrow">←</span></a>' +
+'<a class="ba" href="https://apps.apple.com/app/streisand/id6450534064" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#38bdf8,#0284c7)">St</span><div class="app-info"><div class="app-name">Streisand</div><div class="app-desc">iOS · Free</div></div><span class="arrow">←</span></a>' +
+'<a class="ba" href="https://github.com/hiddify/hiddify-next/releases" target="_blank" rel="noopener"><span class="app-logo" style="background:linear-gradient(135deg,#f59e0b,#f97316)">H</span><div class="app-info"><div class="app-name">Hiddify</div><div class="app-desc">Multi-platform</div></div><span class="arrow">←</span></a>' +
 '</div>' +
 '<div class="made-by">🦦 THIS PANEL MADE BY HAMED TEAM</div>' +
 '<div class="ft">© 2025 __PANEL_NAME__ · v__CURRENT_VERSION__</div>' +
